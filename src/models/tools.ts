@@ -92,5 +92,5 @@ export const availableTools: MCPTool[] = [
   analyzeCodeTool,
   suggestRefactoringTool,
   searchDocsTool,
-  generateCodeTool
+  generateCodeTool  // Add the new tool here
 ];

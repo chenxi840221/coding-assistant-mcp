@@ -1,12 +1,9 @@
+// Project scanning and analysis
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { globalState } from '../extension';
-import { ProjectInfo, DirectoryInfo } from '../models/interfaces';
+import { globalState, DirectoryInfo } from '../models/interfaces';
 import { isTextFile, shouldSkipDirectory, updateFileContent } from '../utils/file-utils';
-
-// File content cache
-const fileContents: Map<string, string> = new Map();
 
 /**
  * Set up project analyzer with file watchers
@@ -14,9 +11,9 @@ const fileContents: Map<string, string> = new Map();
 export function setupProjectAnalyzer(context: vscode.ExtensionContext) {
   // Register file system watcher to keep file content cache up to date
   const fileWatcher = vscode.workspace.createFileSystemWatcher('**/*');
-  fileWatcher.onDidCreate(uri => updateFileContent(uri, fileContents));
-  fileWatcher.onDidChange(uri => updateFileContent(uri, fileContents));
-  fileWatcher.onDidDelete(uri => fileContents.delete(uri.fsPath));
+  fileWatcher.onDidCreate(uri => updateFileContent(uri));
+  fileWatcher.onDidChange(uri => updateFileContent(uri));
+  fileWatcher.onDidDelete(uri => globalState.fileContents?.delete(uri.fsPath));
   
   // Add to subscriptions
   context.subscriptions.push(fileWatcher);
@@ -60,15 +57,12 @@ async function scanWorkspace() {
     return;
   }
 
-  const projectInfo: ProjectInfo = {};
-  fileContents.clear();
+  globalState.projectInfo = {};
+  globalState.fileContents?.clear();
 
   for (const folder of workspaceFolders) {
-    projectInfo[folder.name] = await scanDirectory(folder.uri.fsPath);
+    globalState.projectInfo[folder.name] = await scanDirectory(folder.uri.fsPath);
   }
-  
-  // Store project info in global state
-  globalState.projectInfo = projectInfo;
 }
 
 /**
@@ -98,7 +92,7 @@ async function scanDirectory(directoryPath: string): Promise<DirectoryInfo> {
             const stats = await fs.promises.stat(fullPath);
             if (stats.size < 1024 * 1024) { // Skip files larger than 1MB
               const content = await fs.promises.readFile(fullPath, 'utf-8');
-              fileContents.set(fullPath, content);
+              globalState.fileContents?.set(fullPath, content);
             }
           } catch (error) {
             console.error(`Error reading file ${fullPath}:`, error);
@@ -137,7 +131,7 @@ export async function buildContext(currentFile: string, currentContent: string, 
     formattedContext += "## Related Files\n\n";
     
     for (const filePath of relevantFiles) {
-      const content = fileContents.get(filePath);
+      const content = globalState.fileContents?.get(filePath);
       if (content) {
         formattedContext += `### ${path.basename(filePath)}\n\n`;
         formattedContext += "```\n" + content + "\n```\n\n";
@@ -156,50 +150,6 @@ export async function buildContext(currentFile: string, currentContent: string, 
  * Get relevant files for the current file
  */
 function getRelevantFiles(currentFile: string): string[] {
-  // Simple implementation: return files in the same directory
-  if (!currentFile) return [];
-  
-  const directory = path.dirname(currentFile);
-  const relevantFiles: string[] = [];
-  
-  // Find imports and references in the current file
-  const currentContent = fileContents.get(currentFile);
-  if (currentContent) {
-    // Very simplistic import detection - would need improvement for real usage
-    const importMatches = currentContent.match(/import\s+.*?from\s+['"](.+?)['"]/g) || [];
-    const requireMatches = currentContent.match(/require\s*\(\s*['"](.+?)['"]\s*\)/g) || [];
-    
-    // Process matches and resolve file paths
-    [...importMatches, ...requireMatches].forEach(match => {
-      const importPath = match.match(/['"](.+?)['"]/)?.[1];
-      if (importPath) {
-        // Try to resolve relative path
-        if (importPath.startsWith('.')) {
-          const resolvedPath = path.resolve(directory, importPath);
-          // Check common extensions
-          ['.js', '.ts', '.jsx', '.tsx', '.json'].forEach(ext => {
-            const withExt = resolvedPath + ext;
-            if (fileContents.has(withExt)) {
-              relevantFiles.push(withExt);
-            }
-          });
-        }
-      }
-    });
-  }
-  
-  // Add files from the same directory, limited to 5 additional files
-  if (fs.existsSync(directory)) {
-    fs.readdirSync(directory)
-      .filter(file => file !== path.basename(currentFile) && isTextFile(file))
-      .slice(0, 5)
-      .forEach(file => {
-        const filePath = path.join(directory, file);
-        if (!relevantFiles.includes(filePath) && fileContents.has(filePath)) {
-          relevantFiles.push(filePath);
-        }
-      });
-  }
-  
-  return relevantFiles.slice(0, 10); // Limit to 10 files total
+  // Implementation moved to file-utils.ts
+  return [];
 }

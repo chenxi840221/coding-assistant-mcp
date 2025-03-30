@@ -1,5 +1,5 @@
 {
-  "name": "claude-coding-assistant",
+  "name": "coding-assistant",
   "displayName": "Claude Coding Assistant",
   "description": "VS Code extension integrating Claude AI with Model Control Protocol (MCP) for intelligent coding assistance",
   "version": "0.1.0",
@@ -89,11 +89,6 @@
           "type": "number",
           "default": 4000,
           "description": "Maximum number of tokens in Claude's response"
-        },
-        "claudeAssistant.maxGeneratedFileLength": {
-          "type": "number",
-          "default": 500,
-          "description": "Maximum number of lines to include in a generated code file"
         }
       }
     },

@@ -3,10 +3,9 @@ import * as path from 'path';
 import { MCPMessage, MCPToolContent } from '../models/interfaces';
 import { buildContext } from './project-analyzer';
 import { availableTools } from '../models/tools';
-import { getAnthropicClient, getConfig, isClientConfigured } from '../config/settings';
+import { getAnthropicClient, getConfig, isClientConfigured } from '../config/configuration';
 import { getFileLanguage } from '../utils/file-utils';
-import { FileLengthController } from '../utils/length-control';
-import { analyzeCode } from './tools/analyzer';
+import { analyzeCode } from './tools/analyze-code';
 import { suggestRefactoring } from './tools/refactoring';
 import { searchDocs } from './tools/docs-search';
 import { generateSourceCode } from './tools/code-generator';
@@ -219,9 +218,6 @@ export async function generateCode() {
       throw new Error('Anthropic client not properly configured');
     }
     
-    // Get max file length for prompt
-    const maxLines = config.maxGeneratedFileLength || 500;
-    
     // Create a message to Claude asking for code generation
     const response = await anthropic.messages.create({
       model: config.model,
@@ -229,9 +225,7 @@ export async function generateCode() {
       messages: [
         {
           role: 'user',
-          content: `Please generate a ${language} implementation for the following specification: ${specification}
-          
-IMPORTANT: Please ensure that no single file exceeds ${maxLines} lines of code. If the implementation requires more lines, please split the code into multiple modules or files with appropriate organization.`
+          content: `Please generate a ${language} implementation for the following specification: ${specification}`
         }
       ]
     });
@@ -253,11 +247,10 @@ IMPORTANT: Please ensure that no single file exceeds ${maxLines} lines of code. 
     }
     
     // If a filename was provided, save the code
-    // If a filename was provided, save the code
     if (filename && generatedCode) {
       try {
         await saveGeneratedCode(filename, generatedCode);
-        outputChannel.appendLine(`Code generated and saved to file(s) based on ${filename}`);
+        outputChannel.appendLine(`Code generated and saved to ${filename}`);
       } catch (error) {
         outputChannel.appendLine(`Code generated but could not save to file: ${error}`);
         outputChannel.appendLine('\nGenerated code:');
@@ -292,46 +285,14 @@ async function saveGeneratedCode(filename: string, code: string): Promise<void> 
     // Get workspace root
     const workspaceRoot = vscode.workspace.workspaceFolders[0].uri;
     
-    // Get language from file extension
-    const extension = path.extname(filename).substring(1);
-    const language = extension === 'js' ? 'javascript' :
-                     extension === 'ts' ? 'typescript' :
-                     extension === 'py' ? 'python' :
-                     extension === 'java' ? 'java' :
-                     extension === 'cs' ? 'csharp' :
-                     extension;
+    // Create file URI
+    const fileUri = vscode.Uri.joinPath(workspaceRoot, filename);
     
-    // Split code into multiple files if needed
-    const files = FileLengthController.splitCodeIntoFiles(code, language, filename);
+    // Write to file
+    await vscode.workspace.fs.writeFile(fileUri, Buffer.from(code, 'utf8'));
     
-    // Write all files
-    for (const file of files) {
-      const fileUri = vscode.Uri.joinPath(workspaceRoot, file.filename);
-      await vscode.workspace.fs.writeFile(fileUri, Buffer.from(file.content, 'utf8'));
-      
-      // If this is the first file, open it
-      if (file === files[0]) {
-        await vscode.window.showTextDocument(fileUri);
-      }
-    }
-    
-    // If we split into multiple files, show a message
-    if (files.length > 1) {
-      vscode.window.showInformationMessage(
-        `Generated code was split into ${files.length} files due to line limit.`,
-        'View All Files'
-      ).then(selection => {
-        if (selection === 'View All Files') {
-          // Open all generated files
-          for (let i = 1; i < files.length; i++) {
-            vscode.window.showTextDocument(
-              vscode.Uri.joinPath(workspaceRoot, files[i].filename),
-              { preview: false }
-            );
-          }
-        }
-      });
-    }
+    // Open the file
+    await vscode.window.showTextDocument(fileUri);
   } catch (error) {
     console.error('Error saving generated code:', error);
     throw error;

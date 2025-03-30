@@ -1,3 +1,4 @@
+// HTML/CSS/JS for chat UI
 /**
  * Get the HTML for the chat UI
  */
@@ -26,21 +27,6 @@ export function getChatHTML(): string {
               display: flex;
               justify-content: space-between;
               align-items: center;
-          }
-  
-          .session-info {
-              display: flex;
-              align-items: center;
-          }
-          
-          .session-name {
-              margin-right: 10px;
-              font-weight: bold;
-          }
-          
-          .session-controls {
-              display: flex;
-              gap: 10px;
           }
           
           .chat-container {
@@ -100,6 +86,7 @@ export function getChatHTML(): string {
           
           .clear-button {
               background-color: var(--vscode-errorForeground);
+              margin-left: 10px;
           }
           
           /* Style for code blocks in messages */
@@ -118,13 +105,7 @@ export function getChatHTML(): string {
   </head>
   <body>
       <div class="header">
-          <div class="session-info">
-              <div class="session-name" id="sessionName">Chat with Claude</div>
-              <div class="session-controls">
-                  <button id="switchSessionButton">Switch Session</button>
-                  <button id="newSessionButton">New Session</button>
-              </div>
-          </div>
+          <h2>Chat with Claude</h2>
           <button class="clear-button" id="clearButton">Clear Chat</button>
       </div>
       
@@ -143,13 +124,6 @@ export function getChatHTML(): string {
           const messageInput = document.getElementById('messageInput');
           const sendButton = document.getElementById('sendButton');
           const clearButton = document.getElementById('clearButton');
-          const switchSessionButton = document.getElementById('switchSessionButton');
-          const newSessionButton = document.getElementById('newSessionButton');
-          const sessionNameElement = document.getElementById('sessionName');
-          
-          // Session tracking
-          let currentSessionId = null;
-          let currentSessionName = "Chat with Claude";
           
           // Initialize
           let messages = [];
@@ -157,9 +131,6 @@ export function getChatHTML(): string {
           // Add event listeners
           sendButton.addEventListener('click', sendMessage);
           clearButton.addEventListener('click', clearChat);
-          switchSessionButton.addEventListener('click', switchSession);
-          newSessionButton.addEventListener('click', createNewSession);
-          
           messageInput.addEventListener('keydown', event => {
               if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault();
@@ -174,8 +145,7 @@ export function getChatHTML(): string {
               
               vscode.postMessage({
                   command: 'sendMessage',
-                  text: text,
-                  sessionId: currentSessionId
+                  text: text
               });
               
               messageInput.value = '';
@@ -184,22 +154,7 @@ export function getChatHTML(): string {
           // Function to clear the chat
           function clearChat() {
               vscode.postMessage({
-                  command: 'clearChat',
-                  sessionId: currentSessionId
-              });
-          }
-          
-          // Function to switch session
-          function switchSession() {
-              vscode.postMessage({
-                  command: 'switchSession'
-              });
-          }
-          
-          // Function to create a new session
-          function createNewSession() {
-              vscode.postMessage({
-                  command: 'createSession'
+                  command: 'clearChat'
               });
           }
           
@@ -242,12 +197,6 @@ export function getChatHTML(): string {
                       message.messages.forEach(msg => {
                           renderMessage(msg);
                       });
-                      break;
-                      
-                  case 'setSession':
-                      currentSessionId = message.sessionId;
-                      currentSessionName = message.sessionName;
-                      sessionNameElement.textContent = currentSessionName;
                       break;
               }
           });

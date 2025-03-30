@@ -1,17 +1,5 @@
+// Type definitions and interfaces
 import { Anthropic } from '@anthropic-ai/sdk';
-import * as vscode from 'vscode';
-import { WebViewManager } from '../chat/chat-view';
-
-// The rest of the file remains the same
-export interface GlobalState {
-  context?: vscode.ExtensionContext;
-  webViewManager?: WebViewManager;
-  projectInfo?: ProjectInfo;
-  config?: Config;
-  anthropic?: Anthropic;
-}
-
-// Other existing interfaces...
 
 // Configuration interface
 export interface Config {
@@ -19,7 +7,6 @@ export interface Config {
   model: string;
   maxContextSize: number;
   maxTokens: number;
-  maxGeneratedFileLength: number;
 }
 
 // MCP message interfaces
@@ -71,3 +58,16 @@ export interface DirectoryInfo {
   files: string[];
   directories: { [name: string]: DirectoryInfo };
 }
+
+// Global state
+export interface GlobalState {
+  anthropic?: Anthropic;
+  config?: Config;
+  projectInfo?: ProjectInfo;
+  fileContents?: Map<string, string>;
+}
+
+// Create a global client instance
+export const globalState: GlobalState = {
+  fileContents: new Map<string, string>()
+};

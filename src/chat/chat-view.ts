@@ -1,9 +1,11 @@
+// WebView implementation for chat
 import * as vscode from 'vscode';
 import { ChatSession } from '../models/interfaces';
 import { getChatHTML } from './chat-ui';
 import { 
-  getChatSession, 
+  chatSessions, 
   clearChatSession, 
+  getChatSession,
   handleChatMessage 
 } from './chat-manager';
 
@@ -13,47 +15,35 @@ import {
 export class WebViewManager {
   private context: vscode.ExtensionContext;
   private webViewPanels: Map<string, vscode.WebviewPanel> = new Map();
-  private currentSessionId: string | undefined;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
   }
 
   /**
-   * Open a chat view
+   * Open a chat view with the given session ID
    */
   public openChatView(sessionId?: string): void {
     const columnToShowIn = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
 
-    // If sessionId is provided, use it; otherwise use current session or create a new one
-    let session: ChatSession;
+    // If no sessionId is provided, use the general chat ID
+    const chatId = sessionId || 'general-chat';
     
-    if (sessionId && this.currentSessionId !== sessionId) {
-      session = getChatSession(sessionId);
-      this.currentSessionId = sessionId;
-    } else {
-      session = getChatSession(this.currentSessionId);
-      if (!this.currentSessionId) {
-        this.currentSessionId = session.id;
-      }
-    }
-    
-    // Check if we already have a panel
-    const existingPanel = this.webViewPanels.get('chat');
+    // Check if we already have a panel for this chat
+    const existingPanel = this.webViewPanels.get(chatId);
     
     if (existingPanel) {
       // If we do, show it
       existingPanel.reveal(columnToShowIn);
-      this.updateChatWebview(existingPanel.webview, session);
       return;
     }
     
     // Otherwise, create a new panel
     const panel = vscode.window.createWebviewPanel(
       'claudeChat',
-      `Claude Chat: ${session.name}`,
+      'Claude Chat',
       columnToShowIn || vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -64,11 +54,14 @@ export class WebViewManager {
       }
     );
     
+    // Get or create chat session
+    const session = getChatSession(sessionId);
+    
     // Set the HTML content
     panel.webview.html = getChatHTML();
     
     // Store the panel reference
-    this.webViewPanels.set('chat', panel);
+    this.webViewPanels.set(chatId, panel);
     
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage(
@@ -76,20 +69,14 @@ export class WebViewManager {
         switch (message.command) {
           case 'sendMessage':
             await handleChatMessage(
-              this.currentSessionId!,
-              message.text,
+              session.id, 
+              message.text, 
               (updatedSession) => this.updateChatWebview(panel.webview, updatedSession)
             );
             break;
           case 'clearChat':
-            await clearChatSession(this.currentSessionId!);
-            this.updateChatWebview(panel.webview, getChatSession(this.currentSessionId));
-            break;
-          case 'switchSession':
-            // Implementation for switching between sessions would go here
-            break;
-          case 'createSession':
-            // Implementation for creating a new session would go here
+            clearChatSession(session.id);
+            this.updateChatWebview(panel.webview, session);
             break;
         }
       },
@@ -103,7 +90,7 @@ export class WebViewManager {
     // Handle the panel being closed
     panel.onDidDispose(
       () => {
-        this.webViewPanels.delete('chat');
+        this.webViewPanels.delete(chatId);
       },
       null,
       this.context.subscriptions
