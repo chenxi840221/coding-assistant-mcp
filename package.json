@@ -1,0 +1,161 @@
+{
+  "name": "claude-coding-assistant",
+  "displayName": "Claude Coding Assistant",
+  "description": "VS Code extension integrating Claude AI with Model Control Protocol (MCP) for intelligent coding assistance",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Snippets"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "claudeAssistant.askClaudeMCP",
+        "title": "Ask Claude (Code Assistant)",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.openChatView",
+        "title": "Open Claude Chat",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.analyzeProject",
+        "title": "Analyze Project Structure",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.generateCode",
+        "title": "Generate Code with Claude",
+        "category": "Claude Assistant"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "claude-assistant",
+          "title": "Claude Assistant",
+          "icon": "$(comment-discussion)"
+        }
+      ]
+    },
+    "views": {
+      "claude-assistant": [
+        {
+          "id": "claude-tools",
+          "name": "Claude Tools"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "claude-tools",
+        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatView)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Coding Assistant",
+      "properties": {
+        "claudeAssistant.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API key for Claude"
+        },
+        "claudeAssistant.model": {
+          "type": "string",
+          "default": "claude-3-7-sonnet-20250219",
+          "enum": [
+            "claude-3-7-sonnet-20250219",
+            "claude-3-5-sonnet-20240620",
+            "claude-3-opus-20240229",
+            "claude-3-5-haiku-20240307"
+          ],
+          "description": "Claude model to use"
+        },
+        "claudeAssistant.maxContextSize": {
+          "type": "number",
+          "default": 100000,
+          "description": "Maximum number of characters to include in context"
+        },
+        "claudeAssistant.maxTokens": {
+          "type": "number",
+          "default": 4000,
+          "description": "Maximum number of tokens in Claude's response"
+        },
+        "claudeAssistant.maxGeneratedFileLength": {
+          "type": "number",
+          "default": 500,
+          "description": "Maximum number of lines to include in a generated code file"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "claudeAssistant.askClaudeMCP",
+        "key": "ctrl+shift+c",
+        "mac": "cmd+shift+c",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "claudeAssistant.openChatView",
+        "key": "ctrl+shift+q",
+        "mac": "cmd+shift+q"
+      },
+      {
+        "command": "claudeAssistant.generateCode",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "claudeAssistant.askClaudeMCP",
+          "group": "claudeAssistant"
+        },
+        {
+          "command": "claudeAssistant.generateCode",
+          "group": "claudeAssistant"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "claudeAssistant.analyzeProject",
+          "group": "claudeAssistant"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/minimatch": "^5.1.2",
+    "@types/node": "^16.18.0",
+    "@types/vscode": "^1.60.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "glob": "^7.2.3",
+    "minimatch": "^3.1.2"
+  }
+}
