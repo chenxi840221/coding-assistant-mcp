@@ -1,60 +1,41 @@
-// src/code-assistant/code-assistant.ts
-
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { MCPMessage, MCPToolContent } from '../models/interfaces';
 import { buildContext } from './project-analyzer';
-import { getClaudeService } from '../services/claude-service';
-import { findRelevantContext } from '../chat/vector-store';
+import { availableTools } from '../models/tools';
+import { getAnthropicClient, getConfig, isClientConfigured } from '../config/configuration';
 import { getFileLanguage } from '../utils/file-utils';
+import { analyzeCode } from './tools/analyze-code';
+import { suggestRefactoring } from './tools/refactoring';
+import { searchDocs } from './tools/docs-search';
+import { generateSourceCode } from './tools/code-generator';
 
 /**
  * Set up commands for code assistance
  */
 export function setupCodeAssistantCommands(context: vscode.ExtensionContext) {
-  // Register askClaude command
-  const askClaudeCommand = vscode.commands.registerCommand(
-    'claudeAssistant.askClaudeMCP',
-    askClaude
+  const askClaudeMCPCommand = vscode.commands.registerCommand(
+    'claudeAssistant.askClaudeMCP', 
+    askClaudeMCP
   );
   
-  // Register generateCode command
   const generateCodeCommand = vscode.commands.registerCommand(
     'claudeAssistant.generateCode',
     generateCode
   );
   
-  // Register analyzeCode command
-  const analyzeCodeCommand = vscode.commands.registerCommand(
-    'claudeAssistant.analyzeCode',
-    analyzeCode
-  );
-  
-  // Add to subscriptions
   context.subscriptions.push(
-    askClaudeCommand,
-    generateCodeCommand,
-    analyzeCodeCommand
+    askClaudeMCPCommand,
+    generateCodeCommand
   );
 }
 
 /**
- * Ask Claude about the current code
+ * Ask Claude using MCP for code assistance
  */
-async function askClaude() {
-  const claudeService = getClaudeService();
-  
-  if (!claudeService.isConfigured()) {
-    vscode.window.showErrorMessage(
-      'Claude API key is not configured. Please set your API key in settings.',
-      'Open Settings'
-    ).then(selection => {
-      if (selection === 'Open Settings') {
-        vscode.commands.executeCommand(
-          'workbench.action.openSettings', 
-          'claudeAssistant.apiKey'
-        );
-      }
-    });
+export async function askClaudeMCP() {
+  if (!isClientConfigured()) {
+    vscode.window.showErrorMessage('Claude API key is not configured');
     return;
   }
 
@@ -80,46 +61,128 @@ async function askClaude() {
   if (!question) return;
 
   // Create and show the output channel
-  const outputChannel = vscode.window.createOutputChannel('Claude Assistant');
+  const outputChannel = vscode.window.createOutputChannel('Claude Assistant MCP');
   outputChannel.show();
-  outputChannel.appendLine('Claude is thinking...');
+  outputChannel.appendLine('Thinking...');
 
   try {
-    // Find relevant context from vector store
-    const relevantDocuments = await findRelevantContext(question);
-    
     // Build the context for Claude
-    const formattedContext = await buildContext(
-      currentFile, 
-      currentContent, 
-      selection,
-      relevantDocuments.map((doc: any) => doc.content)
-    );
+    const formattedContext = await buildContext(currentFile, currentContent, selection);
     
-    // Combine question with context
-    const fullPrompt = `I need help with the following question: ${question}\n\n${formattedContext}`;
+    // Initial user message with context
+    const userMessage: MCPMessage = {
+      role: 'user',
+      content: [
+        {
+          type: 'text',
+          text: `I need help with the following question: ${question}\n\nHere is context from my current project:\n\n${formattedContext}`
+        }
+      ]
+    };
+
+    const anthropic = getAnthropicClient();
+    const config = getConfig();
     
-    // Get response from Claude
-    const response = await claudeService.sendMessage(fullPrompt);
+    if (!anthropic || !config) {
+      throw new Error('Anthropic client not properly configured');
+    }
+
+    // Create conversation with MCP tools
+    const mcpConversation = await anthropic.messages.create({
+      model: config.model,
+      max_tokens: config.maxTokens,
+      messages: [userMessage],
+      tools: availableTools
+    });
+
+    // Handle the response
+    let response = '';
     
+    if (mcpConversation.content && mcpConversation.content.length > 0) {
+      // Process each content block
+      for (const contentBlock of mcpConversation.content) {
+        if ('text' in contentBlock) {
+          response += contentBlock.text + '\n\n';
+        } else if ('type' in contentBlock && contentBlock.type === 'tool_use') {
+          // Cast to MCPToolContent and ensure it has an id field
+          const toolUseBlock = contentBlock as MCPToolContent;
+          if (!toolUseBlock.id && 'name' in contentBlock) {
+            // Generate an id if missing
+            toolUseBlock.id = `tool-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+          }
+          
+          // A tool was used
+          const toolResult = await handleToolUse(toolUseBlock, currentFile, fileLanguage);
+          response += `[Used tool: ${toolUseBlock.name}]\n${toolResult}\n\n`;
+        }
+      }
+    }
+
     // Display the response
     outputChannel.clear();
-    outputChannel.appendLine('Claude Assistant:');
+    outputChannel.appendLine('Claude Assistant (MCP):');
     outputChannel.appendLine('');
     outputChannel.appendLine(response);
+    
+    // Log trace for debugging
+    console.log('MCP conversation completed successfully');
   } catch (error) {
-    console.error('Error in Claude Assistant:', error);
+    console.error('Error in Claude Assistant MCP:', error);
     outputChannel.appendLine(`Error: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
 /**
- * Generate code with Claude
+ * Handle tool use requests from Claude
  */
-async function generateCode() {
-  const claudeService = getClaudeService();
-  
-  if (!claudeService.isConfigured()) {
+export async function handleToolUse(toolUse: MCPToolContent, currentFile: string, fileLanguage: string): Promise<string> {
+  if (!toolUse.name || !toolUse.input) {
+    return "Error: Tool use missing name or input";
+  }
+
+  const language = toolUse.input.language || fileLanguage || getFileLanguage(currentFile);
+
+  switch (toolUse.name) {
+    case "analyze_code":
+      return analyzeCode(toolUse.input.code, language);
+    case "suggest_refactoring":
+      return suggestRefactoring(toolUse.input.code, toolUse.input.issues || []);
+    case "search_docs":
+      return searchDocs(toolUse.input.query, language);
+    case "generate_code":
+      const code = generateSourceCode(toolUse.input.specification, language);
+      
+      // Optionally save the code to a file if filename provided
+      if (toolUse.input.filename) {
+        try {
+          await saveGeneratedCode(toolUse.input.filename, code);
+          return `## Generated Code (saved to ${toolUse.input.filename})
+\`\`\`${language}
+${code}
+\`\`\``;
+        } catch (error) {
+          console.error('Error saving generated code:', error);
+          return `## Generated Code (could not save to file)
+\`\`\`${language}
+${code}
+\`\`\``;
+        }
+      }
+      
+      return `## Generated Code
+\`\`\`${language}
+${code}
+\`\`\``;
+    default:
+      return `Unknown tool: ${toolUse.name}`;
+  }
+}
+
+/**
+ * Direct command to generate code with Claude
+ */
+export async function generateCode() {
+  if (!isClientConfigured()) {
     vscode.window.showErrorMessage('Claude API key is not configured');
     return;
   }
@@ -136,83 +199,11 @@ async function generateCode() {
   
   if (!specification) return;
   
-  // Get target directory
-  let targetDirectory: vscode.Uri | undefined;
-  
-  // Check if we're in a workspace
-  if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
-    vscode.window.showErrorMessage('No workspace folder open');
-    return;
-  }
-  
-  const workspaceRoot = vscode.workspace.workspaceFolders[0].uri;
-  
-  // Try to identify a src directory
-  let srcDirectory: vscode.Uri | undefined;
-  try {
-    const srcPath = vscode.Uri.joinPath(workspaceRoot, 'src');
-    const srcStat = await vscode.workspace.fs.stat(srcPath);
-    if (srcStat.type === vscode.FileType.Directory) {
-      srcDirectory = srcPath;
-    }
-  } catch (error) {
-    // src directory doesn't exist, we'll use root
-    console.log('No src directory found, using workspace root');
-  }
-  
-  // Show quick pick with directory options
-  const directoryOptions = [
-    { 
-      label: 'src directory', 
-      description: 'Place in the src folder',
-      uri: srcDirectory,
-    },
-    { 
-      label: 'workspace root', 
-      description: 'Place in the workspace root folder',
-      uri: workspaceRoot
-    },
-    { 
-      label: 'current directory', 
-      description: 'Place in the directory of the currently open file',
-      uri: editor ? vscode.Uri.joinPath(vscode.Uri.file(path.dirname(editor.document.uri.fsPath))) : workspaceRoot
-    },
-    {
-      label: 'choose directory',
-      description: 'Select a specific directory',
-      uri: undefined
-    }
-  ].filter(option => option.uri !== undefined || option.label === 'choose directory');
-  
-  const selectedOption = await vscode.window.showQuickPick(directoryOptions, {
-    placeHolder: 'Select where to save the generated code'
-  });
-  
-  if (!selectedOption) return;
-  
-  // Handle directory selection
-  if (selectedOption.label === 'choose directory') {
-    const folderUris = await vscode.window.showOpenDialog({
-      canSelectFiles: false,
-      canSelectFolders: true,
-      canSelectMany: false,
-      openLabel: 'Select Directory'
-    });
-    
-    if (!folderUris || folderUris.length === 0) return;
-    targetDirectory = folderUris[0];
-  } else {
-    targetDirectory = selectedOption.uri as vscode.Uri;
-  }
-  
-  // Get filename
+  // Get filename (optional)
   const filename = await vscode.window.showInputBox({
-    prompt: 'Enter filename for the generated code',
-    placeHolder: `E.g., myFunction.${language === 'typescript' ? 'ts' : language === 'javascript' ? 'js' : language}`,
-    value: `generated.${language === 'typescript' ? 'ts' : language === 'javascript' ? 'js' : language}`
+    prompt: 'Enter filename for the generated code (optional)',
+    placeHolder: `E.g., myFunction.${language === 'typescript' ? 'ts' : language === 'javascript' ? 'js' : language}`
   });
-  
-  if (!filename) return;
   
   // Create and show the output channel
   const outputChannel = vscode.window.createOutputChannel('Claude Code Generator');
@@ -220,203 +211,63 @@ async function generateCode() {
   outputChannel.appendLine('Generating code...');
   
   try {
-    // Generate code with Claude
-    const generatedCode = await claudeService.generateCode(specification, language);
+    const anthropic = getAnthropicClient();
+    const config = getConfig();
     
-    // Extract code block from markdown response
-    let codeBlock = generatedCode;
-    const codeBlockMatch = generatedCode.match(/```(?:\w+)?\s*([\s\S]+?)\s*```/);
-    if (codeBlockMatch && codeBlockMatch[1]) {
-      codeBlock = codeBlockMatch[1];
+    if (!anthropic || !config) {
+      throw new Error('Anthropic client not properly configured');
     }
     
-    // If we have a target directory and filename, save the code
-    if (targetDirectory && filename && codeBlock) {
+    // Create a message to Claude asking for code generation
+    const response = await anthropic.messages.create({
+      model: config.model,
+      max_tokens: config.maxTokens,
+      messages: [
+        {
+          role: 'user',
+          content: `Please generate a ${language} implementation for the following specification: ${specification}`
+        }
+      ]
+    });
+    
+    // Extract code from response
+    let generatedCode = '';
+    if (response.content && response.content.length > 0) {
+      for (const contentBlock of response.content) {
+        if ('text' in contentBlock && contentBlock.text) {
+          // Extract code block from markdown response
+          const codeBlockMatch = contentBlock.text.match(/```(?:\w+)?\s*([\s\S]+?)\s*```/);
+          if (codeBlockMatch && codeBlockMatch[1]) {
+            generatedCode = codeBlockMatch[1];
+          } else {
+            generatedCode = contentBlock.text;
+          }
+        }
+      }
+    }
+    
+    // If a filename was provided, save the code
+    if (filename && generatedCode) {
       try {
-        // Create file URI
-        const fileUri = vscode.Uri.joinPath(targetDirectory, filename);
-        
-        // Write to file
-        await vscode.workspace.fs.writeFile(fileUri, Buffer.from(codeBlock, 'utf8'));
-        
-        outputChannel.appendLine(`Code generated and saved to ${fileUri.fsPath}`);
-        
-        // Open the file
-        await vscode.window.showTextDocument(fileUri);
+        await saveGeneratedCode(filename, generatedCode);
+        outputChannel.appendLine(`Code generated and saved to ${filename}`);
       } catch (error) {
         outputChannel.appendLine(`Code generated but could not save to file: ${error}`);
         outputChannel.appendLine('\nGenerated code:');
         outputChannel.appendLine('```');
-        outputChannel.appendLine(codeBlock);
+        outputChannel.appendLine(generatedCode);
         outputChannel.appendLine('```');
       }
-    } else if (codeBlock) {
+    } else if (generatedCode) {
       outputChannel.appendLine('Generated code:');
       outputChannel.appendLine('```');
-      outputChannel.appendLine(codeBlock);
+      outputChannel.appendLine(generatedCode);
       outputChannel.appendLine('```');
     } else {
       outputChannel.appendLine('No code was generated. Try refining your specification.');
     }
   } catch (error) {
     console.error('Error generating code:', error);
-    outputChannel.appendLine(`Error: ${error instanceof Error ? error.message : String(error)}`);
-  }
-}
-
-/**
- * Analyze code with Claude
- */
-async function analyzeCode() {
-  const claudeService = getClaudeService();
-  
-  if (!claudeService.isConfigured()) {
-    vscode.window.showErrorMessage('Claude API key is not configured');
-    return;
-  }
-
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) {
-    vscode.window.showInformationMessage('No code editor is active');
-    return;
-  }
-
-  // Get selected code or entire file
-  const selection = editor.selection;
-  const code = selection.isEmpty 
-    ? editor.document.getText() 
-    : editor.document.getText(selection);
-  
-  if (!code) {
-    vscode.window.showInformationMessage('No code to analyze');
-    return;
-  }
-
-  // Get language and file info
-  const language = editor.document.languageId;
-  const fileName = editor.document.fileName;
-  const fileBaseName = path.basename(fileName);
-
-  // Get analysis type options
-  const analysisTypes = [
-    { 
-      label: 'General Analysis', 
-      value: 'general',
-      description: 'Overall code quality, structure, and improvements'
-    },
-    { 
-      label: 'Performance Review', 
-      value: 'performance',
-      description: 'Identify performance bottlenecks and optimizations'
-    },
-    { 
-      label: 'Security Check', 
-      value: 'security',
-      description: 'Check for security vulnerabilities and best practices'
-    },
-    { 
-      label: 'Code Explanation', 
-      value: 'explanation',
-      description: 'Detailed explanation of what the code does'
-    },
-    {
-      label: 'Test Generation',
-      value: 'tests',
-      description: 'Generate unit tests for this code'
-    }
-  ];
-
-  const selectedAnalysis = await vscode.window.showQuickPick(analysisTypes, {
-    placeHolder: 'Select analysis type'
-  });
-
-  if (!selectedAnalysis) return;
-
-  // Create and show the output channel
-  const outputChannel = vscode.window.createOutputChannel('Claude Code Analysis');
-  outputChannel.show();
-  outputChannel.appendLine(`Analyzing code (${selectedAnalysis.label})...`);
-
-  try {
-    // Get related files for context
-    const relevantDocuments = await findRelevantContext(code);
-    
-    // Prepare the prompt based on analysis type
-    let prompt = '';
-    
-    switch (selectedAnalysis.value) {
-      case 'general':
-        prompt = `Please analyze this ${language} code from ${fileBaseName} and provide insights on:
-          1. Code structure and organization
-          2. Potential bugs or issues
-          3. Performance considerations
-          4. Ways to improve readability and maintainability
-          5. Best practices I should follow
-
-          Please be specific and provide examples where appropriate.`;
-        break;
-        
-      case 'performance':
-        prompt = `Please analyze this ${language} code from ${fileBaseName} for performance issues:
-          1. Identify any performance bottlenecks
-          2. Suggest specific optimizations
-          3. Point out any inefficient algorithms or patterns
-          4. Recommend more efficient alternatives
-          5. Estimate the performance impact of your suggestions
-
-          Please include code examples for your recommendations.`;
-        break;
-        
-      case 'security':
-        prompt = `Please perform a security review of this ${language} code from ${fileBaseName}:
-          1. Identify potential security vulnerabilities
-          2. Check for common security issues specific to ${language}
-          3. Highlight sensitive operations that need additional protection
-          4. Recommend security best practices
-          5. Suggest specific changes to improve security
-
-          Please be specific about potential attack vectors.`;
-        break;
-        
-      case 'explanation':
-        prompt = `Please explain this ${language} code from ${fileBaseName} in detail:
-          1. Provide a high-level overview of what the code does
-          2. Break down each function/section and explain its purpose
-          3. Explain any complex or non-obvious logic
-          4. Describe the inputs, outputs, and dependencies
-          5. Note any important patterns or techniques used
-
-          Make your explanation appropriate for someone familiar with programming but new to this codebase.`;
-        break;
-        
-      case 'tests':
-        prompt = `Please generate unit tests for this ${language} code from ${fileBaseName}:
-          1. Identify the key functions or components that need testing
-          2. Create comprehensive test cases covering normal usage
-          3. Include edge cases and error handling tests
-          4. Use appropriate testing frameworks for ${language}
-          5. Provide a brief explanation of what each test is checking
-
-          The tests should be complete and ready to use with minimal modifications.`;
-        break;
-    }
-    
-    // Build context with any relevant files
-    const context = relevantDocuments.length > 0 
-      ? "\n\nProject context that might be relevant:\n" + 
-        relevantDocuments.map((doc: any, i: number) => `Related code ${i+1}:\n\`\`\`\n${doc.content}\n\`\`\`\n`).join("\n")
-      : "";
-    
-    // Send to Claude for analysis
-    const response = await claudeService.sendCodeQuery(prompt + context, code, language);
-    
-    // Display the response
-    outputChannel.clear();
-    outputChannel.appendLine(`Code Analysis (${selectedAnalysis.label}):`);
-    outputChannel.appendLine('');
-    outputChannel.appendLine(response);
-  } catch (error) {
-    console.error('Error analyzing code:', error);
     outputChannel.appendLine(`Error: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

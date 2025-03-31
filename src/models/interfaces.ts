@@ -1,81 +1,73 @@
-// src/models/interfaces.ts
+// Type definitions and interfaces
 import { Anthropic } from '@anthropic-ai/sdk';
-import * as vscode from 'vscode';
 
-/**
- * Global application state
- */
-export interface GlobalState {
-  context?: vscode.ExtensionContext;
-  anthropic?: Anthropic;
-  config?: Config;
-  projectInfo?: Record<string, DirectoryInfo>;
-  fileContents?: Map<string, string>;
-  webViewManager?: any;
-}
-
-/**
- * Application configuration
- */
+// Configuration interface
 export interface Config {
   apiKey: string;
   model: string;
-  maxTokens: number;
   maxContextSize: number;
+  maxTokens: number;
 }
 
-/**
- * Chat message structure
- */
+// MCP message interfaces
+export interface MCPMessage {
+  role: 'user' | 'assistant';
+  content: MCPContent[];
+}
+
+export type MCPContent = MCPTextContent | MCPToolContent;
+
+export interface MCPTextContent {
+  type: 'text';
+  text: string;
+}
+
+export interface MCPToolContent {
+  type: 'tool_use' | 'tool_result';
+  id: string;
+  name?: string;
+  input?: any;
+  content?: any;
+}
+
+export interface MCPTool {
+  name: string;
+  description: string;
+  input_schema: any;
+}
+
+// Chat message interface
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
 }
 
-/**
- * Chat session structure
- */
+// Chat session interface
 export interface ChatSession {
   id: string;
   name: string;
   messages: ChatMessage[];
 }
 
-/**
- * Directory structure information
- */
+// Project structure interfaces
+export interface ProjectInfo {
+  [folderName: string]: DirectoryInfo;
+}
+
 export interface DirectoryInfo {
   files: string[];
-  directories: Record<string, DirectoryInfo>;
+  directories: { [name: string]: DirectoryInfo };
 }
 
-/**
- * Vector store document
- */
-export interface VectorDocument {
-  id: string;
-  content: string;
-  embedding?: number[];
-  metadata?: Record<string, any>;
+// Global state
+export interface GlobalState {
+  anthropic?: Anthropic;
+  config?: Config;
+  projectInfo?: ProjectInfo;
+  fileContents?: Map<string, string>;
 }
 
-/**
- * Model Control Protocol (MCP) Tool Definition
- */
-export interface MCPTool {
-  name: string;
-  description: string;
-  input_schema: {
-    type: string;
-    properties: Record<string, any>;
-    required?: string[];
-  };
-}
-
-/**
- * Global state object
- */
+// Create a global client instance
 export const globalState: GlobalState = {
-  fileContents: new Map<string, string>(),
-  projectInfo: {}
+  fileContents: new Map<string, string>()
 };

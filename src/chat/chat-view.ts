@@ -103,7 +103,7 @@ export class WebViewManager {
   private updateChatWebview(webview: vscode.Webview, session: ChatSession): void {
     webview.postMessage({
       command: 'updateChat',
-      messages: session.messages.filter((msg: ChatMessage) => msg.role !== 'system')
+      messages: session.messages.filter(msg => msg.role !== 'system')
     });
   }
 

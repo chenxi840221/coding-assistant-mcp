@@ -110,12 +110,7 @@ async function scanDirectory(directoryPath: string): Promise<DirectoryInfo> {
 /**
  * Build context from the current file and project
  */
-export async function buildContext(
-  currentFile: string, 
-  currentContent: string, 
-  selection: string,
-  additionalContext: string[] = []
-): Promise<string> {
+export async function buildContext(currentFile: string, currentContent: string, selection: string): Promise<string> {
   let formattedContext = "# Project Context\n\n";
   
   // Add current file information
@@ -130,17 +125,8 @@ export async function buildContext(
     formattedContext += "```\n" + selection + "\n```\n\n";
   }
   
-  // Add additional context provided
-  if (additionalContext && additionalContext.length > 0) {
-    formattedContext += "## Additional Context\n\n";
-    for (let i = 0; i < additionalContext.length; i++) {
-      formattedContext += `### Additional Content ${i+1}\n\n`;
-      formattedContext += "```\n" + additionalContext[i] + "\n```\n\n";
-    }
-  }
-  
   // Add relevant files
-  const relevantFiles = getRelevantFiles(currentFile, globalState.fileContents || new Map());
+  const relevantFiles = getRelevantFiles(currentFile);
   if (relevantFiles.length > 0) {
     formattedContext += "## Related Files\n\n";
     
