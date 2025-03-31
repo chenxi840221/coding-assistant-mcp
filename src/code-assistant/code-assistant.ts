@@ -93,7 +93,7 @@ async function askClaude() {
       currentFile, 
       currentContent, 
       selection,
-      relevantDocuments.map(doc => doc.content)
+      relevantDocuments.map((doc: any) => doc.content)
     );
     
     // Combine question with context
@@ -404,7 +404,7 @@ async function analyzeCode() {
     // Build context with any relevant files
     const context = relevantDocuments.length > 0 
       ? "\n\nProject context that might be relevant:\n" + 
-        relevantDocuments.map((doc, i) => `Related code ${i+1}:\n\`\`\`\n${doc.content}\n\`\`\`\n`).join("\n")
+        relevantDocuments.map((doc: any, i: number) => `Related code ${i+1}:\n\`\`\`\n${doc.content}\n\`\`\`\n`).join("\n")
       : "";
     
     // Send to Claude for analysis

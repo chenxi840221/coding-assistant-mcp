@@ -293,15 +293,15 @@ export function getChatHTML(): string {
               let content = message.content;
               
               // Replace code blocks with properly formatted HTML and add copy/insert buttons
-              content = content.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, language, code) {
-                  return `<pre><button class="copy-button" onclick="copyCode(this)">Copy</button><button class="insert-button" onclick="insertCode(this)">Insert</button><code class="language-${language}">${code}</code></pre>`;
+              content = content.replace(/\`\`\`(\\w*)\n([\\s\\S]*?)\`\`\`/g, function(match, language, code) {
+                  return '<pre><button class="copy-button" onclick="copyCode(this)">Copy</button><button class="insert-button" onclick="insertCode(this)">Insert</button><code class="language-' + language + '">' + code + '</code></pre>';
               });
               
               // Replace inline code
-              content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+              content = content.replace(/\`([^\`]+)\`/g, '<code>$1</code>');
               
               // Handle line breaks
-              content = content.replace(/\n/g, '<br>');
+              content = content.replace(/\\n/g, '<br>');
               
               messageElement.innerHTML = content;
               chatContainer.appendChild(messageElement);

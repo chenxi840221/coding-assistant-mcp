@@ -1,148 +1,81 @@
-// src/models/tools.ts
+// src/models/interfaces.ts
+import { Anthropic } from '@anthropic-ai/sdk';
+import * as vscode from 'vscode';
 
-import { MCPTool } from './interfaces';
+/**
+ * Global application state
+ */
+export interface GlobalState {
+  context?: vscode.ExtensionContext;
+  anthropic?: Anthropic;
+  config?: Config;
+  projectInfo?: Record<string, DirectoryInfo>;
+  fileContents?: Map<string, string>;
+  webViewManager?: any;
+}
 
-// Code analysis tool definition
-export const analyzeCodeTool: MCPTool = {
-  name: "analyze_code",
-  description: "Analyze code to identify patterns, issues, and potential improvements",
+/**
+ * Application configuration
+ */
+export interface Config {
+  apiKey: string;
+  model: string;
+  maxTokens: number;
+  maxContextSize: number;
+}
+
+/**
+ * Chat message structure
+ */
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * Chat session structure
+ */
+export interface ChatSession {
+  id: string;
+  name: string;
+  messages: ChatMessage[];
+}
+
+/**
+ * Directory structure information
+ */
+export interface DirectoryInfo {
+  files: string[];
+  directories: Record<string, DirectoryInfo>;
+}
+
+/**
+ * Vector store document
+ */
+export interface VectorDocument {
+  id: string;
+  content: string;
+  embedding?: number[];
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Model Control Protocol (MCP) Tool Definition
+ */
+export interface MCPTool {
+  name: string;
+  description: string;
   input_schema: {
-    type: "object",
-    properties: {
-      code: {
-        type: "string",
-        description: "The code to analyze"
-      },
-      language: {
-        type: "string",
-        description: "The programming language of the code"
-      }
-    },
-    required: ["code"]
-  }
-};
+    type: string;
+    properties: Record<string, any>;
+    required?: string[];
+  };
+}
 
-// Refactoring suggestion tool definition
-export const suggestRefactoringTool: MCPTool = {
-  name: "suggest_refactoring",
-  description: "Suggest refactoring options for the given code",
-  input_schema: {
-    type: "object",
-    properties: {
-      code: {
-        type: "string",
-        description: "The code to refactor"
-      },
-      issues: {
-        type: "array",
-        items: {
-          type: "string"
-        },
-        description: "List of issues to address in the refactoring"
-      }
-    },
-    required: ["code"]
-  }
+/**
+ * Global state object
+ */
+export const globalState: GlobalState = {
+  fileContents: new Map<string, string>(),
+  projectInfo: {}
 };
-
-// Documentation search tool definition
-export const searchDocsTool: MCPTool = {
-  name: "search_docs",
-  description: "Search documentation for a specific API, function, or concept",
-  input_schema: {
-    type: "object",
-    properties: {
-      query: {
-        type: "string",
-        description: "The search query"
-      },
-      language: {
-        type: "string",
-        description: "The programming language context"
-      }
-    },
-    required: ["query"]
-  }
-};
-
-// Code generation tool definition
-export const generateCodeTool: MCPTool = {
-  name: "generate_code",
-  description: "Generate source code based on a specification",
-  input_schema: {
-    type: "object",
-    properties: {
-      specification: {
-        type: "string",
-        description: "Description of the code to generate"
-      },
-      language: {
-        type: "string",
-        description: "Programming language to use"
-      },
-      filename: {
-        type: "string",
-        description: "Optional filename for the generated code"
-      }
-    },
-    required: ["specification", "language"]
-  }
-};
-
-// Project structure analysis tool
-export const analyzeProjectTool: MCPTool = {
-  name: "analyze_project",
-  description: "Analyze project structure to identify architecture and patterns",
-  input_schema: {
-    type: "object",
-    properties: {
-      path: {
-        type: "string",
-        description: "Project path to analyze (defaults to current workspace)"
-      },
-      exclude: {
-        type: "array",
-        items: {
-          type: "string"
-        },
-        description: "Patterns to exclude from analysis"
-      }
-    },
-    required: []
-  }
-};
-
-// Code explanation tool
-export const explainCodeTool: MCPTool = {
-  name: "explain_code",
-  description: "Provide a clear explanation of what the code does",
-  input_schema: {
-    type: "object",
-    properties: {
-      code: {
-        type: "string",
-        description: "The code to explain"
-      },
-      language: {
-        type: "string",
-        description: "The programming language of the code"
-      },
-      detail_level: {
-        type: "string",
-        enum: ["brief", "normal", "detailed"],
-        description: "Level of detail for the explanation"
-      }
-    },
-    required: ["code"]
-  }
-};
-
-// List of all available tools
-export const availableTools: MCPTool[] = [
-  analyzeCodeTool,
-  suggestRefactoringTool,
-  searchDocsTool,
-  generateCodeTool,
-  analyzeProjectTool,
-  explainCodeTool
-];

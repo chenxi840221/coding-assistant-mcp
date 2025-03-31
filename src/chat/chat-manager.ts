@@ -99,7 +99,7 @@ export async function handleChatMessage(
     const response = await anthropic.messages.create({
       model: config.model,
       max_tokens: config.maxTokens,
-      messages: session.messages.map(msg => ({
+      messages: session.messages.map((msg: ChatMessage) => ({
         role: msg.role === 'system' ? 'user' : msg.role,
         content: msg.content
       }))
@@ -145,7 +145,7 @@ export function clearChatSession(sessionId: string): void {
   const session = getChatSession(sessionId);
   
   // Keep only the system message
-  session.messages = session.messages.filter(msg => msg.role === 'system');
+  session.messages = session.messages.filter((msg: ChatMessage) => msg.role === 'system');
 }
 
 /**
