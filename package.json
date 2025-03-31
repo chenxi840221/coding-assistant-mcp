@@ -36,6 +36,21 @@
         "command": "claudeAssistant.generateCode",
         "title": "Generate Code with Claude",
         "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.cloneRepository",
+        "title": "Clone GitHub Repository",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.pushChanges",
+        "title": "Push Changes to GitHub",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.analyzeAndStore",
+        "title": "Analyze Code for Knowledge Base",
+        "category": "Claude Assistant"
       }
     ],
     "viewsContainers": {
@@ -52,13 +67,17 @@
         {
           "id": "claude-tools",
           "name": "Claude Tools"
+        },
+        {
+          "id": "claude-github",
+          "name": "GitHub Integration"
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "claude-tools",
-        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatView)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)"
+        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatView)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)\n\nGitHub Integration\n[Clone Repository](command:claudeAssistant.cloneRepository)\n[Push Changes](command:claudeAssistant.pushChanges)\n[Analyze & Add to Knowledge Base](command:claudeAssistant.analyzeAndStore)"
       }
     ],
     "configuration": {
@@ -89,6 +108,31 @@
           "type": "number",
           "default": 4000,
           "description": "Maximum number of tokens in Claude's response"
+        },
+        "claudeAssistant.github.usePersonalAccessToken": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use a personal access token for GitHub authentication"
+        },
+        "claudeAssistant.github.personalAccessToken": {
+          "type": "string",
+          "default": "",
+          "description": "Personal access token for GitHub"
+        },
+        "claudeAssistant.github.username": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub username for authentication"
+        },
+        "claudeAssistant.knowledgeBase.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable knowledge base for code context"
+        },
+        "claudeAssistant.knowledgeBase.storageLimit": {
+          "type": "number",
+          "default": 1000,
+          "description": "Maximum number of documents to store in knowledge base"
         }
       }
     },
@@ -150,6 +194,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "axios": "^1.6.5",
     "glob": "^7.2.3",
     "minimatch": "^3.1.2"
   }
