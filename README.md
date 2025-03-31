@@ -1,71 +1,111 @@
-# coding-assistant README
+# Claude VS Code Assistant
 
-This is the README for your extension "coding-assistant". After writing up a brief description, we recommend including the following sections.
+A powerful VS Code extension that integrates Claude AI assistant directly into your coding workflow, enhancing productivity and providing intelligent coding assistance.
+
+![Claude VS Code Assistant](https://via.placeholder.com/800x450.png?text=Claude+VS+Code+Assistant)
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **AI Chat Interface**: Chat with Claude directly within VS Code
+- **Context-Aware Code Assistance**: Get intelligent help based on your current project and selected code
+- **Code Generation**: Generate code snippets and entire files based on your specifications
+- **Code Analysis**: Get insights into code structure, patterns, and potential improvements
+- **Documentation Search**: Find relevant documentation without leaving your editor
+- **Refactoring Suggestions**: Receive intelligent recommendations for code improvements
 
-For example if there is an image subfolder under your extension project workspace:
+## Installation
 
-\!\[feature X\]\(images/feature-x.png\)
+### From VSIX (Recommended)
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+1. Download the `.vsix` file from the [releases page](https://github.com/yourusername/claude-vscode-assistant/releases)
+2. Open VS Code
+3. Go to Extensions view (Ctrl+Shift+X)
+4. Click "..." at the top of the Extensions view
+5. Select "Install from VSIX..." and choose the downloaded file
 
-## Requirements
+### From Source
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+```bash
+git clone https://github.com/yourusername/claude-vscode-assistant.git
+cd claude-vscode-assistant
+npm install
+npm run compile
+vsce package
+# Then install the generated .vsix file as described above
+```
+
+## Setup
+
+1. Get an API key from [Anthropic](https://www.anthropic.com/)
+2. Open VS Code settings (File > Preferences > Settings)
+3. Search for "Claude Assistant"
+4. Enter your API key in the "Claude API Key" field
+
+## Usage
+
+### Chat Interface
+
+1. Open the command palette (Ctrl+Shift+P or Cmd+Shift+P on macOS)
+2. Type "Claude: Open Chat View" and select it
+3. The chat panel will open where you can ask questions and get responses
+
+### Code Assistance
+
+1. Select the code you want help with
+2. Right-click and select "Ask Claude MCP" or use the command palette
+3. Enter your question about the selected code
+4. View Claude's response in the output panel
+
+### Generate Code
+
+1. Open the command palette
+2. Type "Claude: Generate Code" and select it
+3. Enter a description of the code you want to generate
+4. Optionally provide a filename to save the generated code
+5. The generated code will appear in a new file or in the output panel
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+* `claudeAssistant.apiKey`: Your Anthropic API key
+* `claudeAssistant.model`: The Claude model to use (default: "claude-3-7-sonnet-20250219")
+* `claudeAssistant.maxTokens`: Maximum number of tokens in Claude's responses
+* `claudeAssistant.maxContextSize`: Maximum context size for Claude's understanding
 
-For example:
+## Keyboard Shortcuts
 
-This extension contributes the following settings:
+| Command | Shortcut (Windows/Linux) | Shortcut (macOS) |
+|---------|--------------------------|------------------|
+| Open Chat View | Ctrl+Alt+C | Cmd+Alt+C |
+| Ask Claude MCP | Ctrl+Alt+A | Cmd+Alt+A |
+| Generate Code | Ctrl+Alt+G | Cmd+Alt+G |
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Requirements
 
-## Known Issues
+- VS Code version 1.60.0 or higher
+- Node.js 14.x or higher
+- An Anthropic API key with access to Claude models
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Privacy & Security
+
+This extension sends code snippets and queries to Anthropic's API for processing. Please review Anthropic's [privacy policy](https://www.anthropic.com/privacy) for information on how your data is handled.
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
 
-Initial release of ...
+- Initial release with chat, code assistance, and code generation features
+- Support for Claude 3.7 Sonnet model
+- Project structure analysis
+- VS Code theme integration
 
-### 1.0.1
+## Contributing
 
-Fixed issue #.
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-### 1.1.0
+## License
 
-Added features X, Y, and Z.
+This extension is licensed under the [MIT License](LICENSE).
 
 ---
 
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Enjoy coding with Claude!** 🤖✨

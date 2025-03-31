@@ -152,5 +152,9 @@
     "@anthropic-ai/sdk": "^0.39.0",
     "glob": "^7.2.3",
     "minimatch": "^3.1.2"
+  },
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/chenxi840221/coding-assistant-mcp.git"
   }
 }
