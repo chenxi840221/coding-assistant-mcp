@@ -48,8 +48,23 @@
         "category": "Claude Assistant"
       },
       {
-        "command": "claudeAssistant.analyzeAndStore",
-        "title": "Analyze Code for Knowledge Base",
+        "command": "claudeAssistant.setRepositoryUrl",
+        "title": "Set GitHub Repository URL",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.createPullRequest",
+        "title": "Create GitHub Pull Request",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.showGitHubLogs",
+        "title": "Show GitHub Logs",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.clearGitHubLogs",
+        "title": "Clear GitHub Logs",
         "category": "Claude Assistant"
       }
     ],
@@ -77,7 +92,7 @@
     "viewsWelcome": [
       {
         "view": "claude-tools",
-        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatView)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)\n\nGitHub Integration\n[Clone Repository](command:claudeAssistant.cloneRepository)\n[Push Changes](command:claudeAssistant.pushChanges)\n[Analyze & Add to Knowledge Base](command:claudeAssistant.analyzeAndStore)"
+        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatView)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)\n\nGitHub Integration\n[Clone Repository](command:claudeAssistant.cloneRepository)\n[Set Repository URL](command:claudeAssistant.setRepositoryUrl)\n[Push Changes](command:claudeAssistant.pushChanges)\n[Create Pull Request](command:claudeAssistant.createPullRequest)\n[Show GitHub Logs](command:claudeAssistant.showGitHubLogs)"
       }
     ],
     "configuration": {
@@ -123,6 +138,12 @@
           "type": "string",
           "default": "",
           "description": "GitHub username for authentication"
+        },
+        "claudeAssistant.github.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": ["debug", "info", "warning", "error"],
+          "description": "Log level for GitHub operations"
         },
         "claudeAssistant.knowledgeBase.enabled": {
           "type": "boolean",
