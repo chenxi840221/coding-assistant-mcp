@@ -15,6 +15,7 @@ import {
 export class WebViewManager {
   private context: vscode.ExtensionContext;
   private webViewPanels: Map<string, vscode.WebviewPanel> = new Map();
+  private view?: vscode.WebviewView;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -66,19 +67,7 @@ export class WebViewManager {
     // Handle messages from the webview
     panel.webview.onDidReceiveMessage(
       async message => {
-        switch (message.command) {
-          case 'sendMessage':
-            await handleChatMessage(
-              session.id, 
-              message.text, 
-              (updatedSession) => this.updateChatWebview(panel.webview, updatedSession)
-            );
-            break;
-          case 'clearChat':
-            clearChatSession(session.id);
-            this.updateChatWebview(panel.webview, session);
-            break;
-        }
+        this.handleWebViewMessage(message, session);
       },
       undefined,
       this.context.subscriptions
@@ -105,6 +94,58 @@ export class WebViewManager {
       command: 'updateChat',
       messages: session.messages.filter(msg => msg.role !== 'system')
     });
+  }
+
+  /**
+   * Handle a message from the webview
+   */
+  private handleWebViewMessage(message: any, session: ChatSession): void {
+    switch (message.command) {
+      case 'sendMessage':
+        handleChatMessage(
+          session.id, 
+          message.text, 
+          (updatedSession) => this.updateChatWebview(this.view!.webview, updatedSession)
+        );
+        break;
+        
+      case 'clearChat':
+        clearChatSession(session.id);
+        this.updateChatWebview(this.view!.webview, session);
+        break;
+        
+      case 'exportChat':
+        this.exportChatHistory(message.text);
+        break;
+        
+      case 'showInfo':
+        vscode.window.showInformationMessage(message.text);
+        break;
+    }
+  }
+
+  /**
+   * Export chat history to a markdown file
+   */
+  private async exportChatHistory(content: string): Promise<void> {
+    try {
+      // Ask for file path
+      const uri = await vscode.window.showSaveDialog({
+        filters: {
+          'Markdown': ['md'],
+          'Text Files': ['txt']
+        },
+        defaultUri: vscode.Uri.file('claude_chat_history.md')
+      });
+      
+      if (uri) {
+        // Write content to file
+        await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf8'));
+        vscode.window.showInformationMessage(`Chat history exported to ${uri.fsPath}`);
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`Error exporting chat history: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**

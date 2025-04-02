@@ -53,18 +53,18 @@
         "category": "Claude Assistant"
       },
       {
+        "command": "claudeAssistant.showCommitHistory",
+        "title": "Show Commit History",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.listPullRequests",
+        "title": "List Pull Requests",
+        "category": "Claude Assistant"
+      },
+      {
         "command": "claudeAssistant.createPullRequest",
-        "title": "Create GitHub Pull Request",
-        "category": "Claude Assistant"
-      },
-      {
-        "command": "claudeAssistant.showGitHubLogs",
-        "title": "Show GitHub Logs",
-        "category": "Claude Assistant"
-      },
-      {
-        "command": "claudeAssistant.clearGitHubLogs",
-        "title": "Clear GitHub Logs",
+        "title": "Create Pull Request",
         "category": "Claude Assistant"
       }
     ],
@@ -92,7 +92,11 @@
     "viewsWelcome": [
       {
         "view": "claude-tools",
-        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatView)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)\n\nGitHub Integration\n[Clone Repository](command:claudeAssistant.cloneRepository)\n[Set Repository URL](command:claudeAssistant.setRepositoryUrl)\n[Push Changes](command:claudeAssistant.pushChanges)\n[Create Pull Request](command:claudeAssistant.createPullRequest)\n[Show GitHub Logs](command:claudeAssistant.showGitHubLogs)"
+        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatView)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)"
+      },
+      {
+        "view": "claude-github",
+        "contents": "GitHub Integration\n[Clone Repository](command:claudeAssistant.cloneRepository)\n[Set Repository URL](command:claudeAssistant.setRepositoryUrl)\n[Push Changes](command:claudeAssistant.pushChanges)\n[Show Commit History](command:claudeAssistant.showCommitHistory)\n[List Pull Requests](command:claudeAssistant.listPullRequests)\n[Create Pull Request](command:claudeAssistant.createPullRequest)"
       }
     ],
     "configuration": {

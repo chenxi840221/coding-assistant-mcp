@@ -1,4 +1,4 @@
-// HTML/CSS/JS for chat UI
+// HTML/CSS/JS for chat UI with syntax highlighting
 /**
  * Get the HTML for the chat UI
  */
@@ -9,6 +9,21 @@ export function getChatHTML(): string {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Claude Chat</title>
+      <!-- Add Highlight.js for code syntax highlighting -->
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <!-- Add common languages -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/typescript.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/javascript.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/python.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/json.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/css.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/xml.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/markdown.min.js"></script>
+      
+      <!-- Add marked.js for Markdown parsing -->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+      
       <style>
           body {
               font-family: var(--vscode-font-family);
@@ -37,9 +52,10 @@ export function getChatHTML(): string {
           
           .message {
               margin-bottom: 15px;
-              max-width: 80%;
+              max-width: 90%;
               padding: 10px 15px;
               border-radius: 5px;
+              line-height: 1.5;
           }
           
           .user-message {
@@ -69,6 +85,8 @@ export function getChatHTML(): string {
               color: var(--vscode-input-foreground);
               border-radius: 4px;
               margin-right: 10px;
+              font-family: var(--vscode-font-family);
+              resize: vertical;
           }
           
           button {
@@ -92,25 +110,187 @@ export function getChatHTML(): string {
           /* Style for code blocks in messages */
           pre {
               background-color: var(--vscode-textCodeBlock-background);
-              padding: 10px;
-              border-radius: 4px;
+              padding: 12px;
+              border-radius: 6px;
               overflow-x: auto;
+              margin: 10px 0;
+              position: relative;
+          }
+          
+          pre code {
+              font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+              font-size: 13px;
+              line-height: 1.4;
+              tab-size: 4;
+          }
+          
+          .copy-button {
+              position: absolute;
+              top: 5px;
+              right: 5px;
+              padding: 4px 8px;
+              font-size: 12px;
+              background-color: var(--vscode-button-background);
+              color: var(--vscode-button-foreground);
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+              opacity: 0.6;
+              transition: opacity 0.2s;
+          }
+          
+          .copy-button:hover {
+              opacity: 1;
           }
           
           code {
-              font-family: var(--vscode-editor-font-family);
-              font-size: var(--vscode-editor-font-size);
+              font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+              font-size: 13px;
+              background-color: var(--vscode-textCodeBlock-background);
+              padding: 2px 4px;
+              border-radius: 3px;
+          }
+          
+          /* Add styling for markdown elements */
+          .message h1, .message h2, .message h3, .message h4, .message h5, .message h6 {
+              margin-top: 16px;
+              margin-bottom: 8px;
+              font-weight: 600;
+              line-height: 1.25;
+          }
+          
+          .message h1 {
+              font-size: 2em;
+              border-bottom: 1px solid var(--vscode-panel-border);
+              padding-bottom: 0.3em;
+          }
+          
+          .message h2 {
+              font-size: 1.5em;
+              border-bottom: 1px solid var(--vscode-panel-border);
+              padding-bottom: 0.3em;
+          }
+          
+          .message h3 {
+              font-size: 1.25em;
+          }
+          
+          .message p {
+              margin-top: 0;
+              margin-bottom: 10px;
+          }
+          
+          .message ul, .message ol {
+              margin-top: 0;
+              margin-bottom: 10px;
+              padding-left: 2em;
+          }
+          
+          .message blockquote {
+              margin: 0;
+              padding: 0 1em;
+              color: var(--vscode-textPreformat-foreground);
+              border-left: 0.25em solid var(--vscode-textLink-activeForeground);
+          }
+          
+          .message table {
+              border-collapse: collapse;
+              margin-bottom: 10px;
+              width: 100%;
+              overflow: auto;
+          }
+          
+          .message table th {
+              font-weight: 600;
+              background-color: var(--vscode-editor-inactiveSelectionBackground);
+          }
+          
+          .message table th, .message table td {
+              padding: 6px 13px;
+              border: 1px solid var(--vscode-panel-border);
+          }
+          
+          .message table tr:nth-child(2n) {
+              background-color: var(--vscode-editor-lineHighlightBackground);
+          }
+          
+          /* Message role indicator */
+          .message-header {
+              margin-bottom: 5px;
+              font-size: 0.8em;
+              color: var(--vscode-descriptionForeground);
+              display: flex;
+              align-items: center;
+          }
+          
+          .message-timestamp {
+              margin-left: auto;
+              font-size: 0.8em;
+              color: var(--vscode-descriptionForeground);
+          }
+          
+          /* Loading indicator */
+          .typing-indicator {
+              display: flex;
+              align-items: center;
+              margin: 10px 0;
+          }
+          
+          .typing-indicator span {
+              height: 8px;
+              width: 8px;
+              margin: 0 1px;
+              background-color: var(--vscode-descriptionForeground);
+              display: block;
+              border-radius: 50%;
+              opacity: 0.4;
+              animation: typing 1s infinite;
+          }
+          
+          .typing-indicator span:nth-child(1) {
+              animation-delay: 0s;
+          }
+          
+          .typing-indicator span:nth-child(2) {
+              animation-delay: 0.2s;
+          }
+          
+          .typing-indicator span:nth-child(3) {
+              animation-delay: 0.4s;
+          }
+          
+          @keyframes typing {
+              0% {
+                  opacity: 0.4;
+                  transform: translateY(0);
+              }
+              50% {
+                  opacity: 1;
+                  transform: translateY(-4px);
+              }
+              100% {
+                  opacity: 0.4;
+                  transform: translateY(0);
+              }
           }
       </style>
   </head>
   <body>
       <div class="header">
           <h2>Chat with Claude</h2>
-          <button class="clear-button" id="clearButton">Clear Chat</button>
+          <div>
+            <button id="exportButton">Export Chat</button>
+            <button class="clear-button" id="clearButton">Clear Chat</button>
+          </div>
       </div>
       
       <div class="chat-container" id="chatContainer">
           <!-- Messages will be added here -->
+          <div class="typing-indicator" id="typingIndicator" style="display: none;">
+              <span></span>
+              <span></span>
+              <span></span>
+          </div>
       </div>
       
       <div class="input-area">
@@ -124,13 +304,28 @@ export function getChatHTML(): string {
           const messageInput = document.getElementById('messageInput');
           const sendButton = document.getElementById('sendButton');
           const clearButton = document.getElementById('clearButton');
+          const exportButton = document.getElementById('exportButton');
+          const typingIndicator = document.getElementById('typingIndicator');
           
           // Initialize
           let messages = [];
           
+          // Configure marked.js options
+          marked.setOptions({
+              highlight: function(code, lang) {
+                  const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                  return hljs.highlight(code, { language }).value;
+              },
+              langPrefix: 'hljs language-',
+              gfm: true,
+              breaks: true
+          });
+          
           // Add event listeners
           sendButton.addEventListener('click', sendMessage);
           clearButton.addEventListener('click', clearChat);
+          exportButton.addEventListener('click', exportChat);
+          
           messageInput.addEventListener('keydown', event => {
               if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault();
@@ -142,6 +337,11 @@ export function getChatHTML(): string {
           function sendMessage() {
               const text = messageInput.value.trim();
               if (!text) return;
+              
+              // Show typing indicator
+              typingIndicator.style.display = 'flex';
+              chatContainer.appendChild(typingIndicator);
+              chatContainer.scrollTop = chatContainer.scrollHeight;
               
               vscode.postMessage({
                   command: 'sendMessage',
@@ -158,28 +358,106 @@ export function getChatHTML(): string {
               });
           }
           
+          // Function to export chat history
+          function exportChat() {
+              if (messages.length === 0) {
+                  vscode.postMessage({
+                      command: 'showInfo',
+                      text: 'No messages to export'
+                  });
+                  return;
+              }
+              
+              // Format chat history as markdown
+              let exportText = '# Claude Chat History\n\n';
+              exportText += \`Exported on \${new Date().toLocaleString()}\n\n\`;
+              
+              messages.forEach(msg => {
+                  const role = msg.role === 'user' ? 'You' : 'Claude';
+                  exportText += \`## \${role}\n\n\${msg.content}\n\n\`;
+              });
+              
+              vscode.postMessage({
+                  command: 'exportChat',
+                  text: exportText
+              });
+          }
+          
+          // Add copy button to code blocks
+          function addCopyButtonsToCodeBlocks() {
+              const codeBlocks = document.querySelectorAll('pre code');
+              codeBlocks.forEach((codeElement) => {
+                  const pre = codeElement.parentElement;
+                  
+                  // Check if copy button already exists
+                  if (pre.querySelector('.copy-button')) {
+                      return;
+                  }
+                  
+                  const copyButton = document.createElement('button');
+                  copyButton.className = 'copy-button';
+                  copyButton.textContent = 'Copy';
+                  
+                  copyButton.addEventListener('click', () => {
+                      const code = codeElement.textContent;
+                      navigator.clipboard.writeText(code)
+                          .then(() => {
+                              copyButton.textContent = 'Copied!';
+                              setTimeout(() => {
+                                  copyButton.textContent = 'Copy';
+                              }, 2000);
+                          })
+                          .catch(err => {
+                              console.error('Failed to copy: ', err);
+                              copyButton.textContent = 'Error!';
+                              setTimeout(() => {
+                                  copyButton.textContent = 'Copy';
+                              }, 2000);
+                          });
+                  });
+                  
+                  pre.appendChild(copyButton);
+              });
+          }
+          
           // Function to render a message in the chat
           function renderMessage(message) {
+              // Hide typing indicator
+              typingIndicator.style.display = 'none';
+              
               const messageElement = document.createElement('div');
               messageElement.classList.add('message');
               messageElement.classList.add(message.role === 'user' ? 'user-message' : 'assistant-message');
               
-              // Process markdown-like content (for code blocks)
+              // Add message header with role
+              const headerElement = document.createElement('div');
+              headerElement.classList.add('message-header');
+              headerElement.textContent = message.role === 'user' ? 'You' : 'Claude';
+              
+              // Add timestamp
+              const timestamp = document.createElement('span');
+              timestamp.classList.add('message-timestamp');
+              timestamp.textContent = new Date().toLocaleString();
+              headerElement.appendChild(timestamp);
+              
+              messageElement.appendChild(headerElement);
+              
+              // Process content with marked.js for markdown rendering
               let content = message.content;
               
-              // Replace code blocks with properly formatted HTML
-              content = content.replace(/\`\`\`([\s\S]*?)\`\`\`/g, function(match, code) {
-                  return \`<pre><code>\${code}</code></pre>\`;
-              });
+              // Create a div for the content
+              const contentElement = document.createElement('div');
+              contentElement.classList.add('message-content');
+              contentElement.innerHTML = marked.parse(content);
               
-              // Replace inline code
-              content = content.replace(/\`([^\`]+)\`/g, '<code>$1</code>');
-              
-              // Handle line breaks
-              content = content.replace(/\\n/g, '<br>');
-              
-              messageElement.innerHTML = content;
+              messageElement.appendChild(contentElement);
               chatContainer.appendChild(messageElement);
+              
+              // Apply syntax highlighting
+              hljs.highlightAll();
+              
+              // Add copy buttons to code blocks
+              addCopyButtonsToCodeBlocks();
               
               // Scroll to bottom
               chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -190,8 +468,13 @@ export function getChatHTML(): string {
               const message = event.data;
               switch (message.command) {
                   case 'updateChat':
-                      // Clear the container
-                      chatContainer.innerHTML = '';
+                      // Clear the container but keep the typing indicator
+                      while (chatContainer.firstChild !== typingIndicator && chatContainer.firstChild) {
+                          chatContainer.removeChild(chatContainer.firstChild);
+                      }
+                      
+                      // Store messages
+                      messages = message.messages;
                       
                       // Render all messages
                       message.messages.forEach(msg => {

@@ -4,7 +4,7 @@ import { setupChatCommands, setWebViewManager } from './chat/chat-manager';
 import { setupCodeAssistantCommands } from './code-assistant/code-assistant';
 import { setupProjectAnalyzer } from './code-assistant/project-analyzer';
 import { WebViewManager } from './chat/chat-view';
-import { getGitHubService } from './services/github-service';
+import { getGitHubService } from './github/github-service';
 import { initializeVectorStore } from './chat/vector-store';
 import { registerGitHubPanel } from './github/github-panel';
 
@@ -93,8 +93,40 @@ function registerGitHubCommands(context: vscode.ExtensionContext) {
   // Register the GitHub panel
   registerGitHubPanel(context);
   
+  // Register GitHub integration commands
+  const showCommitHistoryCommand = vscode.commands.registerCommand(
+    'claudeAssistant.showCommitHistory',
+    async () => {
+      const githubService = getGitHubService();
+      await githubService.showCommitHistory();
+    }
+  );
+  
+  const listPullRequestsCommand = vscode.commands.registerCommand(
+    'claudeAssistant.listPullRequests',
+    async () => {
+      const githubService = getGitHubService();
+      await githubService.listPullRequests();
+    }
+  );
+  
+  const createPullRequestCommand = vscode.commands.registerCommand(
+    'claudeAssistant.createPullRequest',
+    async () => {
+      const githubService = getGitHubService();
+      await githubService.createPullRequest();
+    }
+  );
+  
   // Add commands to subscriptions
-  context.subscriptions.push(cloneCommand, pushCommand, setRepoUrlCommand);
+  context.subscriptions.push(
+    cloneCommand, 
+    pushCommand, 
+    setRepoUrlCommand, 
+    showCommitHistoryCommand, 
+    listPullRequestsCommand,
+    createPullRequestCommand
+  );
 }
 
 export function deactivate() {

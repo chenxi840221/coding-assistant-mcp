@@ -2,7 +2,7 @@
 
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { getGitHubService } from '../services/github-service';
+import { getGitHubService } from './github-service';
 
 /**
  * Provider for the GitHub repository panel
@@ -100,6 +100,39 @@ export class GitHubPanelProvider implements vscode.WebviewViewProvider {
                 loginMessage: 'Failed to set repository URL. Please check logs.'
               });
             }
+          }
+          break;
+        
+        case 'showCommitHistory':
+          try {
+            await githubService.showCommitHistory();
+          } catch (error) {
+            this.view?.webview.postMessage({
+              type: 'authStatus',
+              loginMessage: 'Failed to show commit history. Please check logs.'
+            });
+          }
+          break;
+          
+        case 'listPullRequests':
+          try {
+            await githubService.listPullRequests();
+          } catch (error) {
+            this.view?.webview.postMessage({
+              type: 'authStatus',
+              loginMessage: 'Failed to list pull requests. Please check logs.'
+            });
+          }
+          break;
+          
+        case 'createPullRequest':
+          try {
+            await githubService.createPullRequest();
+          } catch (error) {
+            this.view?.webview.postMessage({
+              type: 'authStatus',
+              loginMessage: 'Failed to create pull request. Please check logs.'
+            });
           }
           break;
       }
@@ -366,6 +399,24 @@ export class GitHubPanelProvider implements vscode.WebviewViewProvider {
                             <span>Push Changes</span>
                         </div>
                     </button>
+                    <button id="commitHistoryBtn" title="View commit history">
+                        <div class="action-button">
+                            <span>$(git-commit)</span>
+                            <span>Commit History</span>
+                        </div>
+                    </button>
+                    <button id="pullRequestsBtn" title="View pull requests">
+                        <div class="action-button">
+                            <span>$(git-pull-request)</span>
+                            <span>Pull Requests</span>
+                        </div>
+                    </button>
+                    <button id="createPrBtn" title="Create a new pull request">
+                        <div class="action-button">
+                            <span>$(diff-added)</span>
+                            <span>Create Pull Request</span>
+                        </div>
+                    </button>
                     <button id="refreshBtn" title="Refresh repository information">
                         <div class="action-button">
                             <span>$(refresh)</span>
@@ -418,6 +469,18 @@ export class GitHubPanelProvider implements vscode.WebviewViewProvider {
                         url: repoUrl
                     });
                 }
+            });
+            
+            document.getElementById('commitHistoryBtn').addEventListener('click', () => {
+                vscode.postMessage({ command: 'showCommitHistory' });
+            });
+            
+            document.getElementById('pullRequestsBtn').addEventListener('click', () => {
+                vscode.postMessage({ command: 'listPullRequests' });
+            });
+            
+            document.getElementById('createPrBtn').addEventListener('click', () => {
+                vscode.postMessage({ command: 'createPullRequest' });
             });
             
             // Set loading state
