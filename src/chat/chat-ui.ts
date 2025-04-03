@@ -299,190 +299,221 @@ export function getChatHTML(): string {
       </div>
       
       <script>
-          const vscode = acquireVsCodeApi();
-          const chatContainer = document.getElementById('chatContainer');
-          const messageInput = document.getElementById('messageInput');
-          const sendButton = document.getElementById('sendButton');
-          const clearButton = document.getElementById('clearButton');
-          const exportButton = document.getElementById('exportButton');
-          const typingIndicator = document.getElementById('typingIndicator');
-          
-          // Initialize
-          let messages = [];
-          
-          // Configure marked.js options
-          marked.setOptions({
-              highlight: function(code, lang) {
-                  const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-                  return hljs.highlight(code, { language }).value;
-              },
-              langPrefix: 'hljs language-',
-              gfm: true,
-              breaks: true
-          });
-          
-          // Add event listeners
-          sendButton.addEventListener('click', sendMessage);
-          clearButton.addEventListener('click', clearChat);
-          exportButton.addEventListener('click', exportChat);
-          
-          messageInput.addEventListener('keydown', event => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
+          (function() {
+              console.log("Chat UI script initializing");
+              const vscode = acquireVsCodeApi();
+              const chatContainer = document.getElementById('chatContainer');
+              const messageInput = document.getElementById('messageInput');
+              const sendButton = document.getElementById('sendButton');
+              const clearButton = document.getElementById('clearButton');
+              const exportButton = document.getElementById('exportButton');
+              const typingIndicator = document.getElementById('typingIndicator');
+              
+              // Initialize
+              let messages = [];
+              
+              // Configure marked.js options
+              marked.setOptions({
+                  highlight: function(code, lang) {
+                      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                      return hljs.highlight(code, { language }).value;
+                  },
+                  langPrefix: 'hljs language-',
+                  gfm: true,
+                  breaks: true
+              });
+              
+              // Add event listeners
+              console.log("Setting up event listeners");
+              
+              // Send button event
+              sendButton.addEventListener('click', function() {
+                  console.log("Send button clicked");
                   sendMessage();
-              }
-          });
-          
-          // Function to send a message
-          function sendMessage() {
-              const text = messageInput.value.trim();
-              if (!text) return;
-              
-              // Show typing indicator
-              typingIndicator.style.display = 'flex';
-              chatContainer.appendChild(typingIndicator);
-              chatContainer.scrollTop = chatContainer.scrollHeight;
-              
-              vscode.postMessage({
-                  command: 'sendMessage',
-                  text: text
               });
               
-              messageInput.value = '';
-          }
-          
-          // Function to clear the chat
-          function clearChat() {
-              vscode.postMessage({
-                  command: 'clearChat'
-              });
-          }
-          
-          // Function to export chat history
-          function exportChat() {
-              if (messages.length === 0) {
-                  vscode.postMessage({
-                      command: 'showInfo',
-                      text: 'No messages to export'
-                  });
-                  return;
-              }
-              
-              // Format chat history as markdown
-              let exportText = '# Claude Chat History\n\n';
-              exportText += \`Exported on \${new Date().toLocaleString()}\n\n\`;
-              
-              messages.forEach(msg => {
-                  const role = msg.role === 'user' ? 'You' : 'Claude';
-                  exportText += \`## \${role}\n\n\${msg.content}\n\n\`;
+              // Clear button event
+              clearButton.addEventListener('click', function() {
+                  console.log("Clear button clicked");
+                  clearChat();
               });
               
-              vscode.postMessage({
-                  command: 'exportChat',
-                  text: exportText
+              // Export button event
+              exportButton.addEventListener('click', function() {
+                  console.log("Export button clicked");
+                  exportChat();
               });
-          }
-          
-          // Add copy button to code blocks
-          function addCopyButtonsToCodeBlocks() {
-              const codeBlocks = document.querySelectorAll('pre code');
-              codeBlocks.forEach((codeElement) => {
-                  const pre = codeElement.parentElement;
+              
+              // Enter key in message input
+              messageInput.addEventListener('keydown', function(event) {
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                      event.preventDefault();
+                      sendMessage();
+                  }
+              });
+              
+              // Function to send a message
+              function sendMessage() {
+                  const text = messageInput.value.trim();
+                  console.log("Sending message:", text);
                   
-                  // Check if copy button already exists
-                  if (pre.querySelector('.copy-button')) {
+                  if (!text) return;
+                  
+                  // Show typing indicator
+                  typingIndicator.style.display = 'flex';
+                  chatContainer.appendChild(typingIndicator);
+                  chatContainer.scrollTop = chatContainer.scrollHeight;
+                  
+                  vscode.postMessage({
+                      command: 'sendMessage',
+                      text: text
+                  });
+                  
+                  messageInput.value = '';
+              }
+              
+              // Function to clear the chat
+              function clearChat() {
+                  console.log("Clearing chat");
+                  vscode.postMessage({
+                      command: 'clearChat'
+                  });
+              }
+              
+              // Function to export chat history
+              function exportChat() {
+                  console.log("Exporting chat");
+                  if (messages.length === 0) {
+                      vscode.postMessage({
+                          command: 'showInfo',
+                          text: 'No messages to export'
+                      });
                       return;
                   }
                   
-                  const copyButton = document.createElement('button');
-                  copyButton.className = 'copy-button';
-                  copyButton.textContent = 'Copy';
+                  // Format chat history as markdown
+                  let exportText = '# Claude Chat History\\n\\n';
+                  exportText += \`Exported on \${new Date().toLocaleString()}\\n\\n\`;
                   
-                  copyButton.addEventListener('click', () => {
-                      const code = codeElement.textContent;
-                      navigator.clipboard.writeText(code)
-                          .then(() => {
-                              copyButton.textContent = 'Copied!';
-                              setTimeout(() => {
-                                  copyButton.textContent = 'Copy';
-                              }, 2000);
-                          })
-                          .catch(err => {
-                              console.error('Failed to copy: ', err);
-                              copyButton.textContent = 'Error!';
-                              setTimeout(() => {
-                                  copyButton.textContent = 'Copy';
-                              }, 2000);
-                          });
+                  messages.forEach(msg => {
+                      const role = msg.role === 'user' ? 'You' : 'Claude';
+                      exportText += \`## \${role}\\n\\n\${msg.content}\\n\\n\`;
                   });
                   
-                  pre.appendChild(copyButton);
-              });
-          }
-          
-          // Function to render a message in the chat
-          function renderMessage(message) {
-              // Hide typing indicator
-              typingIndicator.style.display = 'none';
+                  vscode.postMessage({
+                      command: 'exportChat',
+                      text: exportText
+                  });
+              }
               
-              const messageElement = document.createElement('div');
-              messageElement.classList.add('message');
-              messageElement.classList.add(message.role === 'user' ? 'user-message' : 'assistant-message');
-              
-              // Add message header with role
-              const headerElement = document.createElement('div');
-              headerElement.classList.add('message-header');
-              headerElement.textContent = message.role === 'user' ? 'You' : 'Claude';
-              
-              // Add timestamp
-              const timestamp = document.createElement('span');
-              timestamp.classList.add('message-timestamp');
-              timestamp.textContent = new Date().toLocaleString();
-              headerElement.appendChild(timestamp);
-              
-              messageElement.appendChild(headerElement);
-              
-              // Process content with marked.js for markdown rendering
-              let content = message.content;
-              
-              // Create a div for the content
-              const contentElement = document.createElement('div');
-              contentElement.classList.add('message-content');
-              contentElement.innerHTML = marked.parse(content);
-              
-              messageElement.appendChild(contentElement);
-              chatContainer.appendChild(messageElement);
-              
-              // Apply syntax highlighting
-              hljs.highlightAll();
-              
-              // Add copy buttons to code blocks
-              addCopyButtonsToCodeBlocks();
-              
-              // Scroll to bottom
-              chatContainer.scrollTop = chatContainer.scrollHeight;
-          }
-          
-          // Handle messages from the extension
-          window.addEventListener('message', event => {
-              const message = event.data;
-              switch (message.command) {
-                  case 'updateChat':
-                      // Clear the container but keep the typing indicator
-                      while (chatContainer.firstChild !== typingIndicator && chatContainer.firstChild) {
-                          chatContainer.removeChild(chatContainer.firstChild);
+              // Add copy button to code blocks
+              function addCopyButtonsToCodeBlocks() {
+                  const codeBlocks = document.querySelectorAll('pre code');
+                  codeBlocks.forEach((codeElement) => {
+                      const pre = codeElement.parentElement;
+                      
+                      // Check if copy button already exists
+                      if (pre.querySelector('.copy-button')) {
+                          return;
                       }
                       
-                      // Store messages
-                      messages = message.messages;
+                      const copyButton = document.createElement('button');
+                      copyButton.className = 'copy-button';
+                      copyButton.textContent = 'Copy';
                       
-                      // Render all messages
-                      message.messages.forEach(msg => {
-                          renderMessage(msg);
+                      copyButton.addEventListener('click', () => {
+                          const code = codeElement.textContent;
+                          navigator.clipboard.writeText(code)
+                              .then(() => {
+                                  copyButton.textContent = 'Copied!';
+                                  setTimeout(() => {
+                                      copyButton.textContent = 'Copy';
+                                  }, 2000);
+                              })
+                              .catch(err => {
+                                  console.error('Failed to copy: ', err);
+                                  copyButton.textContent = 'Error!';
+                                  setTimeout(() => {
+                                      copyButton.textContent = 'Copy';
+                                  }, 2000);
+                              });
                       });
-                      break;
+                      
+                      pre.appendChild(copyButton);
+                  });
               }
-          });
+              
+              // Function to render a message in the chat
+              function renderMessage(message) {
+                  console.log("Rendering message:", message);
+                  // Hide typing indicator
+                  typingIndicator.style.display = 'none';
+                  
+                  const messageElement = document.createElement('div');
+                  messageElement.classList.add('message');
+                  messageElement.classList.add(message.role === 'user' ? 'user-message' : 'assistant-message');
+                  
+                  // Add message header with role
+                  const headerElement = document.createElement('div');
+                  headerElement.classList.add('message-header');
+                  headerElement.textContent = message.role === 'user' ? 'You' : 'Claude';
+                  
+                  // Add timestamp
+                  const timestamp = document.createElement('span');
+                  timestamp.classList.add('message-timestamp');
+                  timestamp.textContent = new Date().toLocaleString();
+                  headerElement.appendChild(timestamp);
+                  
+                  messageElement.appendChild(headerElement);
+                  
+                  // Process content with marked.js for markdown rendering
+                  let content = message.content;
+                  
+                  // Create a div for the content
+                  const contentElement = document.createElement('div');
+                  contentElement.classList.add('message-content');
+                  contentElement.innerHTML = marked.parse(content);
+                  
+                  messageElement.appendChild(contentElement);
+                  chatContainer.appendChild(messageElement);
+                  
+                  // Apply syntax highlighting
+                  hljs.highlightAll();
+                  
+                  // Add copy buttons to code blocks
+                  addCopyButtonsToCodeBlocks();
+                  
+                  // Scroll to bottom
+                  chatContainer.scrollTop = chatContainer.scrollHeight;
+              }
+              
+              // Handle messages from the extension
+              window.addEventListener('message', event => {
+                  const message = event.data;
+                  console.log("Received message from extension:", message);
+                  
+                  switch (message.command) {
+                      case 'updateChat':
+                          console.log("Updating chat with messages:", message.messages);
+                          
+                          // Clear the container but keep the typing indicator
+                          while (chatContainer.firstChild !== typingIndicator && chatContainer.firstChild) {
+                              chatContainer.removeChild(chatContainer.firstChild);
+                          }
+                          
+                          // Store messages
+                          messages = message.messages;
+                          
+                          // Render all messages
+                          message.messages.forEach(msg => {
+                              renderMessage(msg);
+                          });
+                          break;
+                  }
+              });
+              
+              console.log("Chat UI initialization complete");
+          })();
       </script>
   </body>
   </html>`;

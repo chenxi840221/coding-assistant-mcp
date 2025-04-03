@@ -28,6 +28,11 @@
         "category": "Claude Assistant"
       },
       {
+        "command": "claudeAssistant.openChatViewDirect",
+        "title": "Open Claude Chat (Direct)",
+        "category": "Claude Assistant"
+      },
+      {
         "command": "claudeAssistant.analyzeProject",
         "title": "Analyze Project Structure",
         "category": "Claude Assistant"
@@ -66,6 +71,16 @@
         "command": "claudeAssistant.createPullRequest",
         "title": "Create Pull Request",
         "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.showGitHubLogs",
+        "title": "Show GitHub Logs",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.clearGitHubLogs",
+        "title": "Clear GitHub Logs",
+        "category": "Claude Assistant"
       }
     ],
     "viewsContainers": {
@@ -92,7 +107,7 @@
     "viewsWelcome": [
       {
         "view": "claude-tools",
-        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatView)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)"
+        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatViewDirect)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)"
       },
       {
         "view": "claude-github",
@@ -169,7 +184,7 @@
         "when": "editorTextFocus"
       },
       {
-        "command": "claudeAssistant.openChatView",
+        "command": "claudeAssistant.openChatViewDirect",
         "key": "ctrl+shift+q",
         "mac": "cmd+shift+q"
       },

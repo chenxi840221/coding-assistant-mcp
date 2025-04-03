@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { loadConfiguration } from './config/configuration';
+import { loadConfiguration, registerConfigListeners } from './config/configuration';
 import { setupChatCommands, setWebViewManager } from './chat/chat-manager';
 import { setupCodeAssistantCommands } from './code-assistant/code-assistant';
 import { setupProjectAnalyzer } from './code-assistant/project-analyzer';
@@ -28,6 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Load configuration and initialize API clients
   loadConfiguration();
+  
+  // Register config change listeners
+  registerConfigListeners(context);
 
   // Initialize vector store
   initializeVectorStore(context).catch(error => {
@@ -37,6 +40,21 @@ export function activate(context: vscode.ExtensionContext) {
   // Register commands for chat interface
   setupChatCommands(context);
   
+  // Register direct chat command (for debugging)
+  const openChatViewDirectCommand = vscode.commands.registerCommand(
+    'claudeAssistant.openChatViewDirect', 
+    () => {
+      console.log('Direct chat command triggered');
+      if (globalState.webViewManager) {
+        globalState.webViewManager.openChatView();
+      } else {
+        console.error('WebView manager not initialized!');
+        vscode.window.showErrorMessage('WebView manager not initialized. Try reloading the window.');
+      }
+    }
+  );
+  context.subscriptions.push(openChatViewDirectCommand);
+  
   // Register commands for code assistance
   setupCodeAssistantCommands(context);
   
@@ -45,6 +63,8 @@ export function activate(context: vscode.ExtensionContext) {
   
   // Register GitHub integration commands
   registerGitHubCommands(context);
+  
+  console.log('All commands registered');
 }
 
 /**
@@ -118,6 +138,24 @@ function registerGitHubCommands(context: vscode.ExtensionContext) {
     }
   );
   
+  // Show GitHub logs command
+  const showGitHubLogsCommand = vscode.commands.registerCommand(
+    'claudeAssistant.showGitHubLogs',
+    () => {
+      const githubService = getGitHubService();
+      githubService.showLogs();
+    }
+  );
+  
+  // Clear GitHub logs command
+  const clearGitHubLogsCommand = vscode.commands.registerCommand(
+    'claudeAssistant.clearGitHubLogs',
+    () => {
+      const githubService = getGitHubService();
+      githubService.clearLogs();
+    }
+  );
+  
   // Add commands to subscriptions
   context.subscriptions.push(
     cloneCommand, 
@@ -125,7 +163,9 @@ function registerGitHubCommands(context: vscode.ExtensionContext) {
     setRepoUrlCommand, 
     showCommitHistoryCommand, 
     listPullRequestsCommand,
-    createPullRequestCommand
+    createPullRequestCommand,
+    showGitHubLogsCommand,
+    clearGitHubLogsCommand
   );
 }
 

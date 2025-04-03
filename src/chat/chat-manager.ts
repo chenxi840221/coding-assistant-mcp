@@ -10,6 +10,7 @@ export const chatSessions: Map<string, ChatSession> = new Map();
 let webViewManager: any;
 
 export function setWebViewManager(manager: any) {
+  console.log('Setting WebView manager in chat-manager');
   webViewManager = manager;
 }
 
@@ -17,16 +18,22 @@ export function setWebViewManager(manager: any) {
  * Set up chat commands
  */
 export function setupChatCommands(context: vscode.ExtensionContext) {
+  console.log('Setting up chat commands');
   const openChatViewCommand = vscode.commands.registerCommand(
     'claudeAssistant.openChatView', 
     () => {
+      console.log('openChatView command triggered');
       if (webViewManager) {
         webViewManager.openChatView();
+      } else {
+        console.error('WebView manager not available!');
+        vscode.window.showErrorMessage('WebView manager is not available. Please try reloading the window.');
       }
     }
   );
   
   context.subscriptions.push(openChatViewCommand);
+  console.log('Chat commands registered');
 }
 
 /**
@@ -34,6 +41,7 @@ export function setupChatCommands(context: vscode.ExtensionContext) {
  */
 export function createChatSession(name: string = 'General Chat'): ChatSession {
   const sessionId = generateUniqueId();
+  console.log(`Creating new chat session: ${sessionId}`);
   
   const newSession: ChatSession = {
     id: sessionId,
@@ -54,10 +62,13 @@ export function createChatSession(name: string = 'General Chat'): ChatSession {
  * Get a chat session by ID or create a new one
  */
 export function getChatSession(sessionId?: string): ChatSession {
+  console.log(`Getting chat session: ${sessionId || 'new session'}`);
   if (sessionId && chatSessions.has(sessionId)) {
+    console.log(`Found existing session: ${sessionId}`);
     return chatSessions.get(sessionId)!;
   }
   
+  console.log('Creating new session');
   return createChatSession();
 }
 
@@ -69,8 +80,11 @@ export async function handleChatMessage(
   text: string, 
   onUpdate: (session: ChatSession) => void
 ): Promise<void> {
+  console.log(`Handling chat message for session ${sessionId}: ${text.substring(0, 30)}...`);
+  
   // Check if the client is configured
   if (!isClientConfigured()) {
+    console.error('Claude API key is not configured');
     vscode.window.showErrorMessage('Claude API key is not configured');
     return;
   }
@@ -84,6 +98,7 @@ export async function handleChatMessage(
   });
   
   // Update UI to show the message
+  console.log('Updating UI with user message');
   onUpdate(session);
   
   try {
@@ -95,6 +110,7 @@ export async function handleChatMessage(
       throw new Error('Anthropic client not properly configured');
     }
     
+    console.log('Sending request to Claude API');
     // Get response from Claude
     const response = await anthropic.messages.create({
       model: config.model,
@@ -104,6 +120,8 @@ export async function handleChatMessage(
         content: msg.content
       }))
     });
+    
+    console.log('Received response from Claude API');
     
     // Extract response text
     let responseText = '';
@@ -115,6 +133,8 @@ export async function handleChatMessage(
       }
     }
     
+    console.log(`Claude response text length: ${responseText.length}`);
+    
     // Add assistant message to history
     session.messages.push({
       role: 'assistant',
@@ -122,6 +142,7 @@ export async function handleChatMessage(
     });
     
     // Update UI with the response
+    console.log('Updating UI with Claude response');
     onUpdate(session);
     
   } catch (error) {
@@ -134,6 +155,7 @@ export async function handleChatMessage(
     });
     
     // Update UI to show the error
+    console.log('Updating UI with error message');
     onUpdate(session);
   }
 }
@@ -142,6 +164,7 @@ export async function handleChatMessage(
  * Clear a chat session
  */
 export function clearChatSession(sessionId: string): void {
+  console.log(`Clearing chat session: ${sessionId}`);
   const session = getChatSession(sessionId);
   
   // Keep only the system message
@@ -152,5 +175,6 @@ export function clearChatSession(sessionId: string): void {
  * Delete a chat session
  */
 export function deleteChatSession(sessionId: string): boolean {
+  console.log(`Deleting chat session: ${sessionId}`);
   return chatSessions.delete(sessionId);
 }

@@ -7,6 +7,7 @@ import { Config, globalState } from '../models/interfaces';
  * Loads the extension configuration from VS Code settings
  */
 export function loadConfiguration() {
+  console.log('Loading extension configuration');
   const claudeConfig = vscode.workspace.getConfiguration('claudeAssistant');
   
   const config: Config = {
@@ -21,8 +22,10 @@ export function loadConfiguration() {
 
   // Initialize or update Anthropic client
   if (config.apiKey) {
+    console.log(`API key found, initializing Anthropic client with model: ${config.model}`);
     globalState.anthropic = new Anthropic({ apiKey: config.apiKey });
   } else {
+    console.warn('Claude API key is not set. Please configure it in settings.');
     vscode.window.showErrorMessage('Claude API key is not set. Please configure it in settings.');
   }
 }
@@ -30,9 +33,13 @@ export function loadConfiguration() {
 /**
  * Register listeners for configuration changes
  */
+/**
+ * Register listeners for configuration changes
+ */
 export function registerConfigListeners(context: vscode.ExtensionContext) {
   context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
     if (event.affectsConfiguration('claudeAssistant')) {
+      console.log('Configuration changed, reloading');
       loadConfiguration();
     }
   }));
@@ -42,13 +49,19 @@ export function registerConfigListeners(context: vscode.ExtensionContext) {
  * Check if the client is properly configured
  */
 export function isClientConfigured(): boolean {
-  return !!globalState.anthropic && !!globalState.config?.apiKey;
+  console.log('Checking if client is configured');
+  const isConfigured = !!globalState.anthropic && !!globalState.config?.apiKey;
+  console.log(`Client configured: ${isConfigured}`);
+  return isConfigured;
 }
 
 /**
  * Get the configured Anthropic client
  */
 export function getAnthropicClient(): Anthropic | undefined {
+  if (!globalState.anthropic) {
+    console.warn('Anthropic client not initialized');
+  }
   return globalState.anthropic;
 }
 
@@ -56,5 +69,8 @@ export function getAnthropicClient(): Anthropic | undefined {
  * Get the current configuration
  */
 export function getConfig(): Config | undefined {
+  if (!globalState.config) {
+    console.warn('Configuration not loaded');
+  }
   return globalState.config;
 }
