@@ -364,9 +364,31 @@ export class GitHubRepoService {
         const hasChanges = await hasUncommittedChanges(this.workspacePath);
 
         if (hasChanges) {
-          // Stage all changes automatically
+          // Stage all changes with improved error handling
           this.log('info', 'Staging all changes...');
-          await execAsync('git add .', { cwd: this.workspacePath });
+          
+          // Try to add common project files/directories one by one
+          const filesToAdd = [
+            'src/',
+            'package.json',
+            'tsconfig.json',
+            'README.md',
+            '.gitignore',
+            'webpack.config.js',
+            '.vscode-test.mjs',
+            '.vscodeignore',
+            'setup-project.js'
+          ];
+          
+          for (const file of filesToAdd) {
+            try {
+              this.log('debug', `Adding ${file}`);
+              await execAsync(`git add "${file}"`, { cwd: this.workspacePath });
+            } catch (error) {
+              this.log('debug', `Warning: Could not add ${file} - ${error instanceof Error ? error.message : String(error)}`);
+              // Continue with other files even if one fails
+            }
+          }
 
           // Generate automatic commit message with timestamp
           const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -435,6 +457,164 @@ export class GitHubRepoService {
   }
 
   /**
+ * Push changes to GitHub with directory selection
+ */
+  public async pushChangesWithSelection(): Promise<boolean> {
+    if (!await isGitInstalled()) {
+      vscode.window.showErrorMessage('Git is not installed or not in PATH');
+      return false;
+    }
+
+    if (!await isGitRepository(this.workspacePath)) {
+      vscode.window.showErrorMessage('The current workspace is not a Git repository');
+      return false;
+    }
+    
+    // Make sure user is authenticated
+    if (!this.authService.isAuthenticated()) {
+      vscode.window.showInformationMessage('Authentication required to push changes');
+      const authenticated = await this.authService.login(this.workspacePath);
+      if (!authenticated) {
+        vscode.window.showErrorMessage('GitHub authentication failed. Cannot push changes.');
+        return false;
+      }
+    }
+
+    try {
+      // Get files and directories in the workspace
+      const fs = require('fs');
+      const path = require('path');
+      
+      if (!this.workspacePath) {
+        throw new Error('Workspace path is not defined');
+      }
+      
+      let topLevelItems: string[] = [];
+      try {
+        topLevelItems = fs.readdirSync(this.workspacePath).filter((item: string) => {
+          // Filter out common system and hidden files/directories
+          return !item.startsWith('.git') && 
+                item !== 'node_modules' &&
+                !item.startsWith('.');
+        });
+      } catch (error) {
+        this.log('error', `Error reading workspace directory: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error('Failed to read workspace directory');
+      }
+      
+      // Let user select which directories/files to push
+      const selectedItems = await vscode.window.showQuickPick(topLevelItems, {
+        canPickMany: true,
+        placeHolder: 'Select directories and files to push',
+        title: 'Choose items to push to GitHub'
+      });
+      
+      if (!selectedItems || selectedItems.length === 0) {
+        vscode.window.showInformationMessage('No items selected, operation cancelled');
+        return false;
+      }
+
+      // Show progress
+      return await vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
+        title: 'Pushing changes to GitHub',
+        cancellable: true
+      }, async (progress, token) => {
+        try {
+          this.outputChannel.show();
+          this.log('info', `Pushing changes to GitHub for selected items: ${selectedItems.join(', ')}`);
+
+          // Stage selected items
+          this.log('info', 'Staging selected items...');
+          
+          for (const item of selectedItems) {
+            try {
+              this.log('debug', `Adding ${item}`);
+              await execAsync(`git add "${item}"`, { cwd: this.workspacePath });
+            } catch (error) {
+              this.log('warning', `Could not add ${item} - ${error instanceof Error ? error.message : String(error)}`);
+              // Continue with other items even if one fails
+            }
+          }
+
+          // Check if there are staged changes
+          const { stdout: stagedChanges } = await execAsync('git diff --cached --name-only', { cwd: this.workspacePath });
+          
+          if (!stagedChanges.trim()) {
+            this.log('info', 'No changes to commit in the selected items');
+            vscode.window.showInformationMessage('No changes to commit in the selected items');
+            return false;
+          }
+
+          // Generate automatic commit message with timestamp
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+          const commitMessage = `Update selected items - ${timestamp}`;
+          
+          // Commit changes
+          this.log('info', `Committing with message: ${commitMessage}`);
+          await execAsync(`git commit -m "${commitMessage}"`, { cwd: this.workspacePath });
+          
+          vscode.window.showInformationMessage(`Changes committed with message: ${commitMessage}`);
+
+          // Get current branch
+          const currentBranch = await getCurrentBranch(this.workspacePath);
+          if (!currentBranch) {
+            throw new Error('Could not determine current branch');
+          }
+
+          // Push to remote
+          this.log('info', `Pushing to branch: ${currentBranch}`);
+          const pushProcess = spawn('git', ['push', 'origin', currentBranch], { 
+            cwd: this.workspacePath 
+          });
+
+          // Handle output
+          pushProcess.stdout.on('data', (data) => {
+            this.outputChannel.append(data.toString());
+          });
+          
+          pushProcess.stderr.on('data', (data) => {
+            this.outputChannel.append(data.toString());
+          });
+
+          // Wait for process to complete
+          await new Promise<void>((resolve, reject) => {
+            pushProcess.on('close', (code) => {
+              if (code === 0) {
+                resolve();
+              } else {
+                reject(new Error(`Git push process exited with code ${code}`));
+              }
+            });
+            
+            token.onCancellationRequested(() => {
+              pushProcess.kill();
+              reject(new Error('Push operation was cancelled'));
+            });
+          });
+
+          this.log('info', 'Changes pushed successfully!');
+          vscode.window.showInformationMessage('Selected changes pushed to GitHub successfully!');
+          
+          // Automatically analyze repository after pushing changes
+          progress.report({ message: 'Analyzing code for knowledge base...' });
+          await this.analyzeAndStoreRepository();
+          
+          return true;
+        } catch (error) {
+          this.log('error', `Error pushing changes: ${error instanceof Error ? error.message : String(error)}`);
+          vscode.window.showErrorMessage(`Failed to push changes: ${error instanceof Error ? error.message : String(error)}`);
+          return false;
+        }
+      });
+    } catch (error) {
+      this.log('error', `Error in pushChangesWithSelection: ${error instanceof Error ? error.message : String(error)}`);
+      vscode.window.showErrorMessage(`Error: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  }
+  
+  /**
    * Create a pull request on GitHub
    */
   public async createPullRequest(options: {
@@ -496,14 +676,34 @@ export class GitHubRepoService {
       
       // Make sure local changes are pushed
       this.log('info', 'Checking for unpushed changes');
-      const { stdout: unpushedOutput } = await execAsync(
-        `git log origin/${headBranch}..${headBranch} --oneline`,
-        { cwd: this.workspacePath }
-      ).catch(() => ({ stdout: 'cannot determine' }));
-      
-      if (unpushedOutput.trim() !== '') {
+      try {
+        const { stdout: unpushedOutput } = await execAsync(
+          `git log origin/${headBranch}..${headBranch} --oneline`,
+          { cwd: this.workspacePath }
+        );
+        
+        if (unpushedOutput.trim() !== '') {
+          const pushFirst = await vscode.window.showWarningMessage(
+            'There are unpushed changes in your branch. Push changes first?',
+            'Yes',
+            'No'
+          );
+          
+          if (pushFirst === 'Yes') {
+            const pushed = await this.pushChanges();
+            if (!pushed) {
+              return false;
+            }
+          } else if (pushFirst !== 'No') {
+            // User dismissed the dialog
+            return false;
+          }
+        }
+      } catch (error) {
+        // If the remote branch doesn't exist yet, we'll get an error
+        this.log('debug', `Error checking for unpushed changes: ${error instanceof Error ? error.message : String(error)}`);
         const pushFirst = await vscode.window.showWarningMessage(
-          'There are unpushed changes in your branch. Push changes first?',
+          'The branch may not exist on the remote yet. Push changes first?',
           'Yes',
           'No'
         );
@@ -513,9 +713,6 @@ export class GitHubRepoService {
           if (!pushed) {
             return false;
           }
-        } else if (pushFirst !== 'No') {
-          // User dismissed the dialog
-          return false;
         }
       }
       
@@ -576,11 +773,12 @@ export class GitHubRepoService {
             throw new Error(`Unexpected status code: ${response.status}`);
           }
         } catch (error: any) {
-          // Handle API errors
+          // Handle API errors with more detailed information
           if (error.response) {
             const errorMessage = error.response.data.message || 'Unknown API error';
-            const errorDetails = error.response.data.errors ? 
-              error.response.data.errors.map((e: any) => e.message).join(', ') : '';
+            const errorDetails = error.response.data.errors 
+              ? error.response.data.errors.map((e: any) => `${e.resource || ''}: ${e.message || ''}`).join(', ') 
+              : JSON.stringify(error.response.data);
             
             this.log('error', `GitHub API error: ${errorMessage} - ${errorDetails}`);
             vscode.window.showErrorMessage(
@@ -648,3 +846,4 @@ export class GitHubRepoService {
     }
   }
 }
+

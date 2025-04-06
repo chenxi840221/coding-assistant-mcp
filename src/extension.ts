@@ -110,6 +110,8 @@ function registerGitHubCommands(context: vscode.ExtensionContext) {
     }
   );
   
+
+
   // Register the GitHub panel
   registerGitHubPanel(context);
   
@@ -156,10 +158,20 @@ function registerGitHubCommands(context: vscode.ExtensionContext) {
     }
   );
   
+  // Push changes with selection command
+  const pushChangesWithSelectionCommand = vscode.commands.registerCommand(
+    'claudeAssistant.pushChangesWithSelection',
+    async () => {
+      const githubService = getGitHubService();
+      await githubService.pushChangesWithSelection();
+    }
+  );
+
   // Add commands to subscriptions
   context.subscriptions.push(
     cloneCommand, 
     pushCommand, 
+    pushChangesWithSelectionCommand,
     setRepoUrlCommand, 
     showCommitHistoryCommand, 
     listPullRequestsCommand,

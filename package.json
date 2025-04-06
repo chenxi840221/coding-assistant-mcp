@@ -53,6 +53,11 @@
         "category": "Claude Assistant"
       },
       {
+        "command": "claudeAssistant.pushChangesWithSelection",
+        "title": "Push Selected Changes to GitHub",
+        "category": "Claude Assistant"
+      },
+      {
         "command": "claudeAssistant.setRepositoryUrl",
         "title": "Set GitHub Repository URL",
         "category": "Claude Assistant"
@@ -112,6 +117,10 @@
       {
         "view": "claude-github",
         "contents": "GitHub Integration\n[Clone Repository](command:claudeAssistant.cloneRepository)\n[Set Repository URL](command:claudeAssistant.setRepositoryUrl)\n[Push Changes](command:claudeAssistant.pushChanges)\n[Show Commit History](command:claudeAssistant.showCommitHistory)\n[List Pull Requests](command:claudeAssistant.listPullRequests)\n[Create Pull Request](command:claudeAssistant.createPullRequest)"
+      },
+      {
+        "view": "claude-github",
+        "contents": "GitHub Integration\n[Clone Repository](command:claudeAssistant.cloneRepository)\n[Set Repository URL](command:claudeAssistant.setRepositoryUrl)\n[Push All Changes](command:claudeAssistant.pushChanges)\n[Push Selected Changes](command:claudeAssistant.pushChangesWithSelection)\n[Show Commit History](command:claudeAssistant.showCommitHistory)\n[List Pull Requests](command:claudeAssistant.listPullRequests)\n[Create Pull Request](command:claudeAssistant.createPullRequest)"
       }
     ],
     "configuration": {

@@ -16,6 +16,12 @@ out/
 .history/
 .vscode/
 
+Config.Msi/
+*
+Intel/
+*
+System Volume Information/
+*
 
 # Environment and configuration
 .env
