@@ -65,6 +65,7 @@ export interface GlobalState {
   config?: Config;
   projectInfo?: ProjectInfo;
   fileContents?: Map<string, string>;
+  context?: any;
 }
 
 // Create a global client instance

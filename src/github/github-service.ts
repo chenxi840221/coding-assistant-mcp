@@ -69,6 +69,13 @@ export class GitHubService {
   public async pushChanges(): Promise<boolean> {
     return this.repoService.pushChanges();
   }
+  
+  /**
+   * Push selected changes to GitHub
+   */
+  public async pushChangesWithSelection(): Promise<boolean> {
+    return this.repoService.pushChangesWithSelection();
+  }
 
   /**
    * Create a pull request

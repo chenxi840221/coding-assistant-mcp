@@ -43,6 +43,16 @@
         "category": "Claude Assistant"
       },
       {
+        "command": "claudeAssistant.unifiedCodeAssistant",
+        "title": "Open Claude Coding Studio",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.openEnhancedChat",
+        "title": "Open Enhanced Claude Chat",
+        "category": "Claude Assistant"
+      },
+      {
         "command": "claudeAssistant.cloneRepository",
         "title": "Clone GitHub Repository",
         "category": "Claude Assistant"
@@ -112,11 +122,7 @@
     "viewsWelcome": [
       {
         "view": "claude-tools",
-        "contents": "Get help with your code\n[Open Claude Chat](command:claudeAssistant.openChatViewDirect)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Generate New Code](command:claudeAssistant.generateCode)\n[Analyze Project](command:claudeAssistant.analyzeProject)"
-      },
-      {
-        "view": "claude-github",
-        "contents": "GitHub Integration\n[Clone Repository](command:claudeAssistant.cloneRepository)\n[Set Repository URL](command:claudeAssistant.setRepositoryUrl)\n[Push Changes](command:claudeAssistant.pushChanges)\n[Show Commit History](command:claudeAssistant.showCommitHistory)\n[List Pull Requests](command:claudeAssistant.listPullRequests)\n[Create Pull Request](command:claudeAssistant.createPullRequest)"
+        "contents": "Get help with your code\n[Open Claude Coding Studio](command:claudeAssistant.unifiedCodeAssistant)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Analyze Project](command:claudeAssistant.analyzeProject)"
       },
       {
         "view": "claude-github",
@@ -182,6 +188,21 @@
           "type": "number",
           "default": 1000,
           "description": "Maximum number of documents to store in knowledge base"
+        },
+        "claudeAssistant.codeGeneration.defaultPath": {
+          "type": "string",
+          "default": "src",
+          "description": "Default path for generated code files"
+        },
+        "claudeAssistant.codeGeneration.fileStructureTemplates": {
+          "type": "object",
+          "default": {
+            "react": "src/components",
+            "api": "src/api",
+            "utilities": "src/utils",
+            "tests": "tests"
+          },
+          "description": "Template paths for different types of generated code"
         }
       }
     },
@@ -193,7 +214,7 @@
         "when": "editorTextFocus"
       },
       {
-        "command": "claudeAssistant.openChatViewDirect",
+        "command": "claudeAssistant.unifiedCodeAssistant",
         "key": "ctrl+shift+q",
         "mac": "cmd+shift+q"
       },
@@ -206,12 +227,12 @@
     "menus": {
       "editor/context": [
         {
-          "command": "claudeAssistant.askClaudeMCP",
-          "group": "claudeAssistant"
+          "command": "claudeAssistant.unifiedCodeAssistant",
+          "group": "claudeAssistant@1"
         },
         {
-          "command": "claudeAssistant.generateCode",
-          "group": "claudeAssistant"
+          "command": "claudeAssistant.askClaudeMCP",
+          "group": "claudeAssistant@2"
         }
       ],
       "explorer/context": [
