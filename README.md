@@ -1,87 +1,107 @@
-# Claude Coding Assistant
+# Claude Coding Assistant - Deployment Instructions
 
-Claude Coding Assistant is a powerful VS Code extension that integrates Anthropic's Claude AI to enhance your coding experience. This extension provides intelligent code assistance, chat functionality, and GitHub integration.
+Follow these instructions to properly deploy your VS Code extension as a VSIX package that works correctly when installed.
 
-## Features
+## Preparation Steps
 
-### 🤖 AI-Powered Code Assistance
-- Code generation
-- Code analysis
-- Intelligent suggestions and refactoring
-- Multi-language support
+### 1. Create Required Directories and Files
 
-### 💬 Claude Chat Interface
-- Direct AI conversation
-- Context-aware code discussions
-- Code snippet sharing and explanation
+First, create the necessary directory structure:
 
-### 🔧 GitHub Integration
-- Repository cloning
-- Commit and push operations
-- Pull request management
-- Commit history exploration
+```bash
+# Create media directory for icons
+mkdir -p media
+```
 
-## Requirements
+### 2. Add Icon Files
 
-- VS Code version 1.60.0 or higher
-- Anthropic API key (sign up at [Anthropic's website](https://www.anthropic.com))
+Create and add both icon files:
 
-## Installation
+1. Copy the SVG icon for the activity bar:
+   - Create file `media/claude-icon.svg` with the SVG content provided
 
-1. Open Visual Studio Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "Claude Coding Assistant"
-4. Click Install
+2. Create a PNG icon for the extension:
+   - Create a 128x128 PNG icon
+   - Save as `media/claude-icon.png`
 
-## Configuration
+### 3. Update Configuration Files
 
-### API Key Setup
-1. Open VS Code Settings
-2. Navigate to Claude Coding Assistant settings
-3. Enter your Anthropic API key
+Update these files with the provided fixed versions:
 
-### Available Settings
-- `claudeAssistant.apiKey`: Your Anthropic API key
-- `claudeAssistant.model`: Choose Claude model (default: claude-3-7-sonnet-20250219)
-- `claudeAssistant.maxContextSize`: Maximum context characters
-- `claudeAssistant.maxTokens`: Maximum response tokens
+1. Replace `package.json` with the fixed version
+2. Replace `.vscodeignore` with the fixed version
+3. Update `src/extension.ts` with the enhanced version with better logging
+4. Update `src/services/claudeService.ts` to remove the hardcoded API key
 
-## Usage
+### 4. Build and Package
 
-### Quick Commands
-- `Ctrl+Shift+C` (or `Cmd+Shift+C`): Ask Claude about current code
-- `Ctrl+Shift+Q` (or `Cmd+Shift+Q`): Open Claude Coding Studio
-- `Ctrl+Shift+G` (or `Cmd+Shift+G`): Generate Code
+Build and package your extension:
 
-### GitHub Integration
-- Clone repositories
-- Push changes
-- Create pull requests
-- View commit history
+```bash
+# Install dependencies if needed
+npm install
 
-## Known Issues
+# Build the extension
+npm run compile
 
-- Initial releases may have occasional stability issues
-- Please report any bugs on our GitHub repository
+# Package the extension
+npx vsce package
+```
 
-## Release Notes
+This will create a `.vsix` file in your project directory.
 
-### 0.1.0
-- Initial release
-- Basic code generation
-- Claude chat interface
-- GitHub integration
+## Installation and Debugging
 
-## Contributing
+### Installing the VSIX
 
-Contributions are welcome! Please check our GitHub repository for guidelines.
+1. In VS Code, go to Extensions view (Ctrl+Shift+X)
+2. Click the "..." menu (top-right) and select "Install from VSIX..."
+3. Choose the .vsix file you created
 
-## License
+### Debugging Installation Issues
 
-[MIT License]
+If you encounter issues with the installed extension:
 
-## Support
+1. Check the Developer Tools console:
+   - Help > Toggle Developer Tools
+   - Look for errors related to your extension
 
-For support, please file an issue on our GitHub repository or contact support.
+2. Check the Output panel:
+   - View > Output
+   - Select "Claude Coding Assistant" from the dropdown
 
-**Enjoy coding with Claude!**
+3. Verify extension loading:
+   - Open command palette (Ctrl+Shift+P)
+   - Type "Developer: Show Running Extensions"
+   - Check if your extension is listed and active
+
+## Common Issues and Solutions
+
+### Extension Not Appearing
+
+If the extension doesn't appear in the activity bar:
+
+1. Check package.json for correct viewsContainers configuration
+2. Ensure icon files exist in the right location
+3. Verify activation events are properly configured
+
+### Commands Not Working
+
+If commands don't work:
+
+1. Check command registrations in extension.ts
+2. Verify command IDs match between code and package.json
+3. Check for errors in the activation process
+
+### Missing Resources
+
+If resources are missing:
+
+1. Check .vscodeignore to ensure necessary files are not excluded
+2. Make sure media files are properly included in the VSIX
+
+## Additional Notes
+
+- Remember to restart VS Code after installing the VSIX
+- If making changes, always create a new VSIX and reinstall
+- Clear VS Code cache if problems persist (Help > Clear Editor State)

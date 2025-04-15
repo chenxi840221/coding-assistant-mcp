@@ -2,15 +2,19 @@
 .git
 .gitignore
 node_modules
-src
+src/**
 **/*.ts
 **/*.map
 **/tsconfig.json
 **/tsconfig.build.json
 .eslintrc.json
 .prettierrc
-README.md
 CHANGELOG.md
 webpack.config.js
 test
 .env
+*.js.map
+
+# Important: DO NOT exclude the media directory or icon files
+!media/**/*
+!dist/**/*

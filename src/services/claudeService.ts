@@ -17,7 +17,7 @@ export class ClaudeService {
     constructor() {
         // Get configuration values from VS Code settings
         const config = vscode.workspace.getConfiguration('codingAssistant');
-        this.apiKey = config.get('apiKey') || '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';
+        this.apiKey = config.get('apiKey') || '';
         this.model = config.get('model') || 'claude-3-7-sonnet-20250219';
         
         // Listen for configuration changes
