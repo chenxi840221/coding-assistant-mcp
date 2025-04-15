@@ -12,7 +12,13 @@
     "Snippets"
   ],
   "activationEvents": [
-    "onStartupFinished"
+  "onStartupFinished",
+  "onCommand:claudeAssistant.askClaudeMCP",
+  "onCommand:claudeAssistant.openChatView",
+  "onCommand:claudeAssistant.generateCode",
+  "onCommand:claudeAssistant.unifiedCodeAssistant",
+  "onView:claude-tools",
+  "onView:claude-github"
   ],
   "main": "./dist/extension.js",
   "contributes": {

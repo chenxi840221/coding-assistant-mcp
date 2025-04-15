@@ -43,10 +43,16 @@ export interface ChatMessage {
 }
 
 // Chat session interface
+export interface ChatSessionMetadata {
+  tokensUsed: number;
+  lastRequestTimestamp: number;
+}
+
 export interface ChatSession {
   id: string;
   name: string;
   messages: ChatMessage[];
+  metadata?: ChatSessionMetadata;
 }
 
 // Project structure interfaces

@@ -1,71 +1,87 @@
-# coding-assistant README
+# Claude Coding Assistant
 
-This is the README for your extension "coding-assistant". After writing up a brief description, we recommend including the following sections.
+Claude Coding Assistant is a powerful VS Code extension that integrates Anthropic's Claude AI to enhance your coding experience. This extension provides intelligent code assistance, chat functionality, and GitHub integration.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+### 🤖 AI-Powered Code Assistance
+- Code generation
+- Code analysis
+- Intelligent suggestions and refactoring
+- Multi-language support
 
-For example if there is an image subfolder under your extension project workspace:
+### 💬 Claude Chat Interface
+- Direct AI conversation
+- Context-aware code discussions
+- Code snippet sharing and explanation
 
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+### 🔧 GitHub Integration
+- Repository cloning
+- Commit and push operations
+- Pull request management
+- Commit history exploration
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+- VS Code version 1.60.0 or higher
+- Anthropic API key (sign up at [Anthropic's website](https://www.anthropic.com))
 
-## Extension Settings
+## Installation
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+1. Open Visual Studio Code
+2. Go to Extensions (Ctrl+Shift+X)
+3. Search for "Claude Coding Assistant"
+4. Click Install
 
-For example:
+## Configuration
 
-This extension contributes the following settings:
+### API Key Setup
+1. Open VS Code Settings
+2. Navigate to Claude Coding Assistant settings
+3. Enter your Anthropic API key
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+### Available Settings
+- `claudeAssistant.apiKey`: Your Anthropic API key
+- `claudeAssistant.model`: Choose Claude model (default: claude-3-7-sonnet-20250219)
+- `claudeAssistant.maxContextSize`: Maximum context characters
+- `claudeAssistant.maxTokens`: Maximum response tokens
+
+## Usage
+
+### Quick Commands
+- `Ctrl+Shift+C` (or `Cmd+Shift+C`): Ask Claude about current code
+- `Ctrl+Shift+Q` (or `Cmd+Shift+Q`): Open Claude Coding Studio
+- `Ctrl+Shift+G` (or `Cmd+Shift+G`): Generate Code
+
+### GitHub Integration
+- Clone repositories
+- Push changes
+- Create pull requests
+- View commit history
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Initial releases may have occasional stability issues
+- Please report any bugs on our GitHub repository
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+### 0.1.0
+- Initial release
+- Basic code generation
+- Claude chat interface
+- GitHub integration
 
-### 1.0.0
+## Contributing
 
-Initial release of ...
+Contributions are welcome! Please check our GitHub repository for guidelines.
 
-### 1.0.1
+## License
 
-Fixed issue #.
+[MIT License]
 
-### 1.1.0
+## Support
 
-Added features X, Y, and Z.
+For support, please file an issue on our GitHub repository or contact support.
 
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Enjoy coding with Claude!**
