@@ -8,6 +8,7 @@ import {
   getChatSession,
   handleChatMessage 
 } from './chat-manager';
+import { getFileButtonHTML, registerFileButtonHandlers } from './chat-ui-file-button';
 
 /**
  * Manages WebView panels for chat UI
@@ -108,6 +109,7 @@ export class WebViewManager {
       undefined,
       this.context.subscriptions
     );
+    registerFileButtonHandlers(panel.webview);
     
     // Update the webview with existing messages
     console.log('Updating webview with existing messages');

@@ -1,4 +1,6 @@
-// HTML/CSS/JS for chat UI with syntax highlighting
+// HTML/CSS/JS for chat UI with syntax highlighting and file button support
+import { getFileButtonHTML } from './chat-ui-file-button';
+
 /**
  * Get the HTML for the chat UI
  */
@@ -124,23 +126,28 @@ export function getChatHTML(): string {
               tab-size: 4;
           }
           
-          .copy-button {
+          .code-actions {
               position: absolute;
               top: 5px;
               right: 5px;
+              display: flex;
+              gap: 5px;
+          }
+          
+          .copy-button, .insert-button {
               padding: 4px 8px;
               font-size: 12px;
               background-color: var(--vscode-button-background);
               color: var(--vscode-button-foreground);
               border: none;
-              border-radius: 4px;
+              border-radius: 2px;
               cursor: pointer;
-              opacity: 0.6;
-              transition: opacity 0.2s;
+              opacity: 0.8;
           }
           
-          .copy-button:hover {
+          .copy-button:hover, .insert-button:hover {
               opacity: 1;
+              background-color: var(--vscode-button-hoverBackground);
           }
           
           code {
@@ -272,6 +279,57 @@ export function getChatHTML(): string {
                   opacity: 0.4;
                   transform: translateY(0);
               }
+          }
+          
+          /* File button component styles */
+          .file-button-container {
+            margin: 0;
+            padding: 0;
+          }
+          
+          .file-input-row {
+            display: flex;
+            margin-bottom: 4px;
+            gap: 4px;
+          }
+          
+          .file-name-input {
+            flex: 1;
+            padding: 2px 4px;
+            font-size: 11px;
+            background-color: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 2px;
+          }
+          
+          .file-button {
+            padding: 2px 4px;
+            font-size: 11px;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border: none;
+            border-radius: 2px;
+            cursor: pointer;
+            white-space: nowrap;
+          }
+          
+          .file-button:hover {
+            background-color: var(--vscode-button-hoverBackground);
+          }
+          
+          .file-search-result {
+            font-size: 10px;
+            margin-top: 2px;
+            min-height: 14px;
+          }
+          
+          .file-exists {
+            color: var(--vscode-terminal-ansiGreen);
+          }
+          
+          .file-not-found {
+            color: var(--vscode-terminal-ansiYellow);
           }
       </style>
   </head>
@@ -406,17 +464,23 @@ export function getChatHTML(): string {
                   });
               }
               
-              // Add copy button to code blocks
-              function addCopyButtonsToCodeBlocks() {
+              // Add copy button and file button to code blocks
+              function addButtonsToCodeBlocks() {
                   const codeBlocks = document.querySelectorAll('pre code');
                   codeBlocks.forEach((codeElement) => {
                       const pre = codeElement.parentElement;
                       
-                      // Check if copy button already exists
-                      if (pre.querySelector('.copy-button')) {
+                      // Check if actions div already exists
+                      if (pre.querySelector('.code-actions')) {
                           return;
                       }
                       
+                      // Create actions container
+                      const actionsDiv = document.createElement('div');
+                      actionsDiv.className = 'code-actions';
+                      pre.appendChild(actionsDiv);
+                      
+                      // Add copy button
                       const copyButton = document.createElement('button');
                       copyButton.className = 'copy-button';
                       copyButton.textContent = 'Copy';
@@ -439,7 +503,27 @@ export function getChatHTML(): string {
                               });
                       });
                       
-                      pre.appendChild(copyButton);
+                      actionsDiv.appendChild(copyButton);
+                      
+                      // Add file button container
+                      const fileButtonContainer = document.createElement('div');
+                      fileButtonContainer.innerHTML = ${getFileButtonHTML()};
+                      actionsDiv.appendChild(fileButtonContainer.firstElementChild);
+                      
+                      // Add insert button
+                      const insertButton = document.createElement('button');
+                      insertButton.className = 'insert-button';
+                      insertButton.textContent = 'Insert';
+                      
+                      insertButton.addEventListener('click', () => {
+                          const code = codeElement.textContent;
+                          vscode.postMessage({
+                              command: 'insertAtCursor',
+                              text: code
+                          });
+                      });
+                      
+                      actionsDiv.appendChild(insertButton);
                   });
               }
               
@@ -480,8 +564,8 @@ export function getChatHTML(): string {
                   // Apply syntax highlighting
                   hljs.highlightAll();
                   
-                  // Add copy buttons to code blocks
-                  addCopyButtonsToCodeBlocks();
+                  // Add buttons to code blocks
+                  addButtonsToCodeBlocks();
                   
                   // Scroll to bottom
                   chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -508,6 +592,41 @@ export function getChatHTML(): string {
                           message.messages.forEach(msg => {
                               renderMessage(msg);
                           });
+                          break;
+                          
+                      case 'searchResult':
+                          // Handle file search result
+                          const fileSearchResult = document.getElementById('fileSearchResult');
+                          if (fileSearchResult) {
+                              if (message.found) {
+                                  fileSearchResult.textContent = \`File exists: \${message.filePath}\`;
+                                  fileSearchResult.className = 'file-search-result file-exists';
+                                  
+                                  // Update button
+                                  const fileButton = document.getElementById('createUpdateFileBtn');
+                                  if (fileButton) {
+                                      fileButton.textContent = 'Update File';
+                                  }
+                              } else {
+                                  fileSearchResult.textContent = \`File not found. Will create new file.\`;
+                                  fileSearchResult.className = 'file-search-result file-not-found';
+                                  
+                                  // Update button
+                                  const fileButton = document.getElementById('createUpdateFileBtn');
+                                  if (fileButton) {
+                                      fileButton.textContent = 'Create File';
+                                  }
+                              }
+                          }
+                          break;
+                          
+                      case 'fileCreated':
+                          // Handle file creation/update result
+                          const resultMsg = document.getElementById('fileSearchResult');
+                          if (resultMsg) {
+                              resultMsg.textContent = message.result;
+                              resultMsg.className = 'file-search-result file-exists';
+                          }
                           break;
                   }
               });

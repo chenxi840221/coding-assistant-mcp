@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { loadConfiguration, registerConfigListeners } from './config/configuration';
 import { setupChatCommands, setWebViewManager } from './chat/chat-manager';
 import { setupCodeAssistantCommands } from './code-assistant/code-assistant';
@@ -9,6 +10,9 @@ import { getGitHubService } from './github/github-service';
 import { initializeVectorStore } from './chat/vector-store';
 import { registerGitHubPanel } from './github/github-panel';
 import { getCodeFileManager } from './utils/code-file-manager';
+import { getFileService } from './utils/file-service';
+import { registerFileManagerPanel } from './file-manager/file-panel';
+import { registerFileButtonHandlers } from './chat/chat-ui-file-button';
 
 // Store global state
 export let globalState: {
@@ -136,6 +140,16 @@ export function activate(context: vscode.ExtensionContext) {
     registerGitHubPanel(context);
     console.log('GitHub panel registered');
     
+    // Register File Manager panel
+    console.log('Registering File Manager panel...');
+    registerFileManagerPanel(context);
+    console.log('File Manager panel registered');
+    
+    // Register file operations command
+    console.log('Registering file operations command...');
+    registerFileOperationsCommand(context);
+    console.log('File operations command registered');
+
     // Register editor context tracking
     console.log('Registering editor context tracking...');
     registerEditorContextTracking(context);
@@ -147,6 +161,141 @@ export function activate(context: vscode.ExtensionContext) {
     console.error('Error during extension activation:', error);
     vscode.window.showErrorMessage(`Claude Coding Assistant failed to activate: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+/**
+ * Register file operations command
+ */
+function registerFileOperationsCommand(context: vscode.ExtensionContext) {
+  // Register command to handle file operations from anywhere in the extension
+  const createUpdateFileCommand = vscode.commands.registerCommand(
+    'claudeAssistant.createOrUpdateFile',
+    async (params?: { fileName?: string, content?: string }) => {
+      console.log('Create/Update file command triggered');
+      
+      try {
+        const fileService = getFileService();
+        
+        // Get fileName from params or prompt user
+        let fileName = params?.fileName;
+        if (!fileName) {
+          fileName = await vscode.window.showInputBox({
+            prompt: 'Enter the file name',
+            placeHolder: 'e.g., extension.ts'
+          });
+          
+          if (!fileName) {
+            // User cancelled
+            return;
+          }
+        }
+        
+        // Search for the file
+        const existingFilePath = await fileService.searchForFile(fileName);
+        
+        // Get content from params, editor, or prompt user
+        let content = params?.content;
+        if (!content) {
+          const editor = vscode.window.activeTextEditor;
+          if (editor && editor.selection && !editor.selection.isEmpty) {
+            // Use selected text if there's a selection
+            content = editor.document.getText(editor.selection);
+          } else {
+            // If the file exists, get its current content as default
+            if (existingFilePath) {
+              try {
+                content = await fileService.loadFileContent(existingFilePath);
+              } catch (error) {
+                console.error('Error loading file content:', error);
+              }
+            }
+            
+            // Open an untitled document for editing if no content provided
+            const document = await vscode.workspace.openTextDocument({
+              content: content || '',
+              language: getLanguageFromFileName(fileName)
+            });
+            
+            const editor = await vscode.window.showTextDocument(document);
+            
+            // Show message with instructions
+            const action = existingFilePath ? 'update' : 'create';
+            const targetPath = existingFilePath || fileService.suggestFilePath(fileName, '');
+            
+            const result = await vscode.window.showInformationMessage(
+              `Edit content and press Save to ${action} the file at: ${targetPath}`,
+              'Save and Create'
+            );
+            
+            if (result === 'Save and Create') {
+              content = editor.document.getText();
+              // Close the temporary document
+              await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            } else {
+              return; // User cancelled
+            }
+          }
+        }
+        
+        if (!content) {
+          vscode.window.showWarningMessage('No content provided for the file.');
+          return;
+        }
+        
+        // Create or update the file
+        let targetPath: string;
+        let resultMessage: string;
+        
+        if (existingFilePath) {
+          // Update existing file
+          targetPath = existingFilePath;
+          await fileService.createOrUpdateFile(targetPath, content);
+          resultMessage = `File updated: ${targetPath}`;
+        } else {
+          // Create new file in suggested location
+          targetPath = fileService.suggestFilePath(fileName, content);
+          
+          // Ask user to confirm location
+          const confirmed = await vscode.window.showQuickPick(
+            ['Yes', 'No', 'Choose different location'],
+            { placeHolder: `Create file at ${targetPath}?` }
+          );
+          
+          if (confirmed === 'No') {
+            return;
+          } else if (confirmed === 'Choose different location') {
+            // Let user choose location
+            const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri;
+            if (!workspaceRoot) {
+              vscode.window.showErrorMessage('No workspace folder is open');
+              return;
+            }
+            
+            const targetUri = await vscode.window.showSaveDialog({
+              defaultUri: vscode.Uri.joinPath(workspaceRoot, fileName),
+              saveLabel: 'Create File'
+            });
+            
+            if (!targetUri) {
+              return; // User cancelled
+            }
+            
+            targetPath = targetUri.fsPath;
+          }
+          
+          await fileService.createOrUpdateFile(targetPath, content);
+          resultMessage = `File created: ${targetPath}`;
+        }
+        
+        vscode.window.showInformationMessage(resultMessage);
+      } catch (error) {
+        console.error('Error in createOrUpdateFile command:', error);
+        vscode.window.showErrorMessage(`Failed to create/update file: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+  );
+  
+  context.subscriptions.push(createUpdateFileCommand);
 }
 
 /**
@@ -366,6 +515,38 @@ function registerEditorContextTracking(context: vscode.ExtensionContext) {
   );
   
   console.log('Editor context tracking registered successfully');
+}
+
+/**
+ * Get language ID from file name
+ */
+function getLanguageFromFileName(fileName: string): string {
+  const ext = path.extname(fileName).toLowerCase();
+  
+  switch (ext) {
+    case '.ts':
+      return 'typescript';
+    case '.js':
+      return 'javascript';
+    case '.json':
+      return 'json';
+    case '.md':
+      return 'markdown';
+    case '.py':
+      return 'python';
+    case '.html':
+      return 'html';
+    case '.css':
+      return 'css';
+    case '.scss':
+      return 'scss';
+    case '.jsx':
+      return 'javascriptreact';
+    case '.tsx':
+      return 'typescriptreact';
+    default:
+      return 'plaintext';
+  }
 }
 
 export function deactivate() {

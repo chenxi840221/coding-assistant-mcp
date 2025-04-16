@@ -97,6 +97,16 @@
         "command": "claudeAssistant.clearGitHubLogs",
         "title": "Clear GitHub Logs",
         "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.createOrUpdateFile",
+        "title": "Create or Update File",
+        "category": "Claude Assistant"
+      },
+      {
+        "command": "claudeAssistant.openFileManager",
+        "title": "Open File Manager",
+        "category": "Claude Assistant"
       }
     ],
     "viewsContainers": {
@@ -123,7 +133,7 @@
     "viewsWelcome": [
       {
         "view": "claude-tools",
-        "contents": "Get help with your code\n[Open Claude Coding Studio](command:claudeAssistant.unifiedCodeAssistant)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Analyze Project](command:claudeAssistant.analyzeProject)"
+        "contents": "Get help with your code\n[Open Claude Coding Studio](command:claudeAssistant.unifiedCodeAssistant)\n[Ask About Current File](command:claudeAssistant.askClaudeMCP)\n[Analyze Project](command:claudeAssistant.analyzeProject)\n[Create/Update File](command:claudeAssistant.createOrUpdateFile)\n[Open File Manager](command:claudeAssistant.openFileManager)"
       },
       {
         "view": "claude-github",
@@ -209,6 +219,16 @@
             "tests": "tests"
           },
           "description": "Template paths for different types of generated code"
+        },
+        "claudeAssistant.fileManagement.defaultLocation": {
+          "type": "string",
+          "default": "src",
+          "description": "Default location for new files"
+        },
+        "claudeAssistant.fileManagement.useSmartPathSuggestion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use smart path suggestion for new files based on filename and content"
         }
       }
     },
@@ -228,6 +248,11 @@
         "command": "claudeAssistant.generateCode",
         "key": "ctrl+shift+g",
         "mac": "cmd+shift+g"
+      },
+      {
+        "command": "claudeAssistant.createOrUpdateFile",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f"
       }
     ],
     "menus": {
@@ -239,24 +264,33 @@
         {
           "command": "claudeAssistant.askClaudeMCP",
           "group": "claudeAssistant@2"
+        },
+        {
+          "command": "claudeAssistant.createOrUpdateFile",
+          "group": "claudeAssistant@3"
         }
       ],
       "explorer/context": [
         {
           "command": "claudeAssistant.analyzeProject",
-          "group": "claudeAssistant"
+          "group": "claudeAssistant@1"
+        },
+        {
+          "command": "claudeAssistant.createOrUpdateFile",
+          "group": "claudeAssistant@2"
         }
       ]
     }
   },
   "scripts": {
-  "vscode:prepublish": "webpack --mode production",
-  "compile": "webpack --mode development",
-  "watch": "webpack --mode development --watch",
-  "lint": "eslint src --ext ts",
-  "test": "jest"
+    "vscode:prepublish": "webpack --mode production",
+    "compile": "webpack --mode development",
+    "watch": "webpack --mode development --watch",
+    "lint": "eslint src --ext ts",
+    "test": "jest"
   },
   "devDependencies": {
+    "@types/glob": "^8.1.0",
     "@types/jest": "^29.5.0",
     "@types/minimatch": "^5.1.2",
     "@types/node": "^16.18.0",
